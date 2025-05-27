@@ -1,0 +1,34 @@
+local TweenService = game:GetService("TweenService")
+local PathfindingService = game:GetService("PathfindingService")
+
+local PathModule = {}
+
+function PathModule:MoveTo(character, targetPosition)
+	if not character or not character:FindFirstChild("Humanoid") or not character:FindFirstChild("HumanoidRootPart") then
+		warn("Invalid character or missing components")
+		return
+	end
+
+	local humanoid = character.Humanoid
+	local rootPart = character.HumanoidRootPart
+
+	local path = PathfindingService:CreatePath()
+	local success, errorMessage = pcall(function()
+		path:ComputeAsync(character.PrimaryPart.Position, targetPosition)
+	end)
+
+	if success and path.Status == Enum.PathStatus.Success then
+
+		local waypoints = path:GetWaypoints()
+		for _, waypoint in ipairs(waypoints) do
+			humanoid:MoveTo(waypoint.Position)
+			humanoid.MoveToFinished:Wait()
+		end
+	else
+		local tweenInfo = TweenInfo.new((rootPart.Position - targetPosition).Magnitude / 16, Enum.EasingStyle.Linear)
+		local tween = TweenService:Create(rootPart, tweenInfo, {Position = targetPosition})
+		tween:Play()
+	end
+end
+
+return PathModule
