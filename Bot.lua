@@ -116,7 +116,6 @@ function Bot:walkTo(position, onComplete)
 	local rootPart = self.character:FindFirstChild("HumanoidRootPart")
 	if not humanoid or not rootPart then return end
 
-	print("Moving to:", position)
 	humanoid:MoveTo(position)
 	self.currentTarget = position
     self:clearConnection()
