@@ -34,6 +34,7 @@ function FarmModule:startFarming()
 end
 
 function FarmModule:startGathering()
+    self:checkingPollen()
     self:gotoField(function()
         print("Starting farming in field:", shared.main.currentField.Name)
     end)
@@ -222,7 +223,17 @@ function FarmModule:gotoHive(onComplete)
     if tween and onComplete then onComplete() end
     return tween
 end
-
+function  FarmModule:checkingPollen()
+    local Capacity, Pollen = shared.main.Capacity, shared.main.Pollen
+    if Pollen >= Capacity and not convertPollen then
+        convertPollen = true
+        self:gotoHive(function()
+            print("Converting pollen to honey...")
+            task.wait(1)
+            self:convertPollen()
+        end)
+    end
+end
 function FarmModule:setupListener()
     childAddedConn = CollectiblesFolder.ChildAdded:Connect(function(item)
         table.insert(itemToPickup, item)
@@ -238,16 +249,7 @@ function FarmModule:setupListener()
     end)
     task.spawn(function()
         while startFarm do
-            local Capacity, Pollen = shared.main.Capacity, shared.main.Pollen
-            if Pollen >= Capacity and not convertPollen then
-                convertPollen = true
-                self:gotoHive(function()
-                    print("Converting pollen to honey...")
-                    task.wait(1)
-                    self:convertPollen()
-                    
-                end)
-            end
+            self:checkingPollen()
             task.wait(0.1)
         end
     end)
