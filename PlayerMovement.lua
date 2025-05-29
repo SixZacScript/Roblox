@@ -2,16 +2,19 @@ local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 
 local PlayerMovementModule = {}
+
 local currentWalkSpeed = 16
 local currentJumpPower = 50
+
 function PlayerMovementModule:start(mainTab)
 	local movementSection = mainTab:CreateSection("Player Movement")
+
 	mainTab:CreateSlider({
 		Name = "Walk Speed",
 		Range = {16, 100},
 		Increment = 1,
 		Suffix = "Speed",
-		CurrentValue = 16,
+		CurrentValue = currentWalkSpeed,
 		Callback = function(value)
 			currentWalkSpeed = value
 			local character = LocalPlayer.Character
@@ -27,7 +30,7 @@ function PlayerMovementModule:start(mainTab)
 		Range = {50, 150},
 		Increment = 1,
 		Suffix = "Power",
-		CurrentValue = 50,
+		CurrentValue = currentJumpPower,
 		Callback = function(value)
 			currentJumpPower = value
 			local character = LocalPlayer.Character
@@ -38,11 +41,23 @@ function PlayerMovementModule:start(mainTab)
 		SectionParent = movementSection
 	})
 
-	LocalPlayer.CharacterAdded:Connect(function(character)
+	local function applyMovementStats(character)
 		local humanoid = character:WaitForChild("Humanoid")
 		humanoid.WalkSpeed = currentWalkSpeed
 		humanoid.JumpPower = currentJumpPower
-	end)
+
+		humanoid:GetPropertyChangedSignal("WalkSpeed"):Connect(function()
+			if humanoid.WalkSpeed ~= currentWalkSpeed then
+				humanoid.WalkSpeed = currentWalkSpeed
+			end
+		end)
+	end
+
+	if LocalPlayer.Character then
+		applyMovementStats(LocalPlayer.Character)
+	end
+
+	LocalPlayer.CharacterAdded:Connect(applyMovementStats)
 end
 
 return PlayerMovementModule

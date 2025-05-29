@@ -83,8 +83,6 @@ end
 function FarmModule:moveTo(position, item)
     local char = self.character
     local humanoid = char:FindFirstChild("Humanoid")
-    local rootPart = char.PrimaryPart
-
     local reached = false
     local successResult = false
 
@@ -137,9 +135,7 @@ function FarmModule:getRandomPosinField()
     local character = self.character
     local rootPart = character.PrimaryPart
     local currentField = shared.main.currentField
-    local size = currentField.Size
     local position = currentField.Position
-
     local maxDistance = 30
     local offsetX, offsetZ
 
