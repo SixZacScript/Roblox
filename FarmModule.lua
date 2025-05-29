@@ -36,8 +36,8 @@ function FarmModule:startFarming()
             if Pollen >= Capacity and not convertPollen then
                 convertPollen = true
                 self:gotoHive(function()
-                    self:convertPollen()
                     print("Converting pollen to honey...")
+                    self:convertPollen()
                     
                 end)
             end
@@ -237,8 +237,8 @@ function FarmModule:checkingStatus()
     if isFull and not convertPollen then
         convertPollen = true
         self:gotoHive(function()
-            self:convertPollen()
             print("Converting pollen to honey...")
+            self:convertPollen()
             
         end)
     elseif not isFull and convertPollen then
