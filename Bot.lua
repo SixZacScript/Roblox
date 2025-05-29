@@ -14,29 +14,29 @@ function Bot.new(character, manageRef)
 	self.isRunning = false
     self.farming = false
 
-    CollectiblesFolder.ChildAdded:Connect(function(item)
-        if item:IsA("BasePart") and item.Name ~= "Baseplate" then
-            table.insert(self.items, item)
-            if self.farming then
-                local rootPart = self.character:FindFirstChild("HumanoidRootPart")
-                if rootPart and (rootPart.Position - item.Position).Magnitude <= 30 then
-                    self:addTask({
-                        type = "move",
-                        position = item.Position,
-                        onComplete = function()
-                            print("Picked up item:", item.Name)
-                            for i, v in ipairs(self.items) do
-                                if v == item then
-                                    table.remove(self.items, i)
-                                    break
-                                end
-                            end
-                        end
-                    })
-                end
-            end
-        end
-    end)
+    -- CollectiblesFolder.ChildAdded:Connect(function(item)
+    --     if item:IsA("BasePart") and item.Name ~= "Baseplate" then
+    --         table.insert(self.items, item)
+    --         if self.farming then
+    --             local rootPart = self.character:FindFirstChild("HumanoidRootPart")
+    --             if rootPart and (rootPart.Position - item.Position).Magnitude <= 30 then
+    --                 self:addTask({
+    --                     type = "move",
+    --                     position = item.Position,
+    --                     onComplete = function()
+    --                         print("Picked up item:", item.Name)
+    --                         for i, v in ipairs(self.items) do
+    --                             if v == item then
+    --                                 table.remove(self.items, i)
+    --                                 break
+    --                             end
+    --                         end
+    --                     end
+    --                 })
+    --             end
+    --         end
+    --     end
+    -- end)
 	return self
 end
 
