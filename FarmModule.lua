@@ -111,10 +111,12 @@ function FarmModule:moveTo(position, item)
     end)
 
     while not reached and humanoid and humanoid.Health > 0 do
-        if not startFarm then
+        if not startFarm or convertPollen then
+            if conn then conn:Disconnect() end
             break
         end
         if item and not item:IsDescendantOf(CollectiblesFolder) then
+            if conn then conn:Disconnect() end
             break
         end
         task.wait()
