@@ -52,6 +52,9 @@ function FarmingManager:init()
 		Capacity = self.Capacity.Value or 0,
 		Honey = self.Honey.Value or 0,
 		Hove = self.Hive,
+		tweenSpeed = 0.6,
+		tokenRadius = 30,
+
 	}
 	self.botHelper = self.botHelper.new(self.character, self)
 

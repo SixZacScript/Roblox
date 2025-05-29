@@ -15,7 +15,7 @@ function Bot.new(character, manageRef)
     CollectiblesFolder.ChildAdded:Connect(function(item)
         if item:IsA("BasePart") and self.character and self.character:FindFirstChild("HumanoidRootPart") then
             local rootPart = self.character.HumanoidRootPart
-            if (rootPart.Position - item.Position).Magnitude <= 30 then
+            if (rootPart.Position - item.Position).Magnitude <= shared.main.tokenRadius then
                 table.insert(self.items, item)
             end
         end
