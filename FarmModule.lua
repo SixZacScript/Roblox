@@ -180,7 +180,7 @@ function FarmModule:convertPollen()
     until Pollen <= 0
 
     convertPollen = false
-    self:startGathering()
+   if startFarm then  self:startGathering() end
 end
 
 
