@@ -13,6 +13,9 @@ function Bot.new(character, manageRef)
     self.items = {}
 	self.isRunning = false
     self.farming = false
+    self.movingConnection = nil
+    self.heartbeatConnection = nil
+    self.currentTarget = nil
 
     CollectiblesFolder.ChildAdded:Connect(function(item)
         if item:IsA("BasePart") then
@@ -51,9 +54,8 @@ function Bot:runTasks()
 end
 
 function Bot:executeTask(taskData)
-    print("Executing task:", taskData.type)
 	if taskData.type == "walk" then
-		self:moveTo(taskData.position, taskData.onComplete)
+		self:walkTo(taskData.position, taskData.onComplete)
 	elseif taskData.type == "farm" then
 		self:farmAt(taskData.field, taskData.onComplete)
 	elseif taskData.type == "fly" then
@@ -66,9 +68,6 @@ function Bot:executeTask(taskData)
 	end
 end
 
-function Bot:moveTo(position, onComplete)
-	self:flyTo(position, onComplete) 
-end
 
 function Bot:flyTo(position, onComplete)
 	local rootPart = self.character:FindFirstChild("HumanoidRootPart")
@@ -86,12 +85,48 @@ end
 
 function Bot:walkTo(position, onComplete)
 	local humanoid = self.character:FindFirstChildOfClass("Humanoid")
-	if not humanoid then return end
+	local rootPart = self.character:FindFirstChild("HumanoidRootPart")
+	if not humanoid or not rootPart then return end
 
+	print("Moving to:", position)
 	humanoid:MoveTo(position)
-	local conn
-	conn = humanoid.MoveToFinished:Connect(function(reached)
-		if conn then conn:Disconnect() end
+	self.currentTarget = position
+
+	if self.movingConnection then
+		self.movingConnection:Disconnect()
+	end
+	if self.heartbeatConnection then
+		self.heartbeatConnection:Disconnect()
+	end
+
+    self.heartbeatConnection = game:GetService("RunService").Heartbeat:Connect(function()
+        if self.farming and #self.items > 0 then
+            local item = self.items[1]
+            if item and (not self.currentTarget or (self.currentTarget - item.Position).Magnitude > 1) then
+                print("Go to item")
+                table.remove(self.items, 1)
+                if self.movingConnection then
+                    self.movingConnection:Disconnect()
+                    self.movingConnection = nil
+                end
+                if self.heartbeatConnection then
+                    self.heartbeatConnection:Disconnect()
+                    self.heartbeatConnection = nil
+                end
+                self:walkTo(item.Position, onComplete)
+            end
+        end
+    end)
+
+	self.movingConnection = humanoid.MoveToFinished:Connect(function(reached)
+		if self.movingConnection then
+			self.movingConnection:Disconnect()
+			self.movingConnection = nil
+		end
+		if self.heartbeatConnection then
+			self.heartbeatConnection:Disconnect()
+			self.heartbeatConnection = nil
+		end
 		if onComplete then onComplete() end
 	end)
 end
@@ -120,15 +155,11 @@ function Bot:farmAt(Field, onComplete)
     local function moveNext()
         if not self.farming then return end
         local nextPos = getRandomPositionInField()
-        self:addTask({
-            type = "walk",
-            position = nextPos,
-            onComplete = function()
-                moveNext()
-            end
-        })
-
+        self:walkTo(nextPos, function()
+            moveNext()
+        end)
     end
+
     self:addTask({
         type = "fly",
         position = FieldPosition,
