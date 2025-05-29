@@ -29,7 +29,6 @@ function FarmModule:startFarming()
 
     task.spawn(function()
         while startFarm do
-            print(tokenMode)
             while #itemToPickup > 0 do
                 local item = self:getNextItem()
                 if item and item:IsDescendantOf(CollectiblesFolder) and self:isInField(item.Position) then
