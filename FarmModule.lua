@@ -18,7 +18,8 @@ function FarmModule:init(managerRef)
     character:WaitForChild("Humanoid")
     character:WaitForChild("HumanoidRootPart")
     self.character = character
-    self:getUnclaimHive() 
+    if not managerRef.Hive then self:getUnclaimHive() end
+
     return self
 end
 
@@ -35,7 +36,9 @@ function FarmModule:startFarming()
             local Capacity, Pollen = shared.main.Capacity, shared.main.Pollen
             if Pollen >= Capacity and not convertPollen then
                 convertPollen = true
-                self:convertPollen()
+                local gotoHiveResult = self:gotoHive()
+                print("Going to Hive:", gotoHiveResult)
+                -- self:convertPollen()
             end
             task.wait(0.1)
         end
@@ -197,7 +200,7 @@ function FarmModule:getUnclaimHive()
     local Honeycombs = workspace:FindFirstChild("Honeycombs")
     for index,hive in pairs(Honeycombs:GetChildren()) do
         local OwnerObject = hive:FindFirstChild("Owner")
-        if OwnerObject and not OwnerObject.Vaue then
+        if OwnerObject and not OwnerObject.Value then
             local Event = game:GetService("ReplicatedStorage").Events.ClaimHive
             Event:FireServer(table.unpack({index}))
             return hive
@@ -208,7 +211,8 @@ end
 function  FarmModule:gotoHive()
     local Hive = self.manager.Hive
     if not Hive then
-        Hive = self:getUnclaimHive()
+        self.manager.Hive = self:getUnclaimHive()
+        Hive = self.manager.Hive
     end
     local patharrow = Hive and Hive:FindFirstChild("patharrow")
     local Base = patharrow and patharrow:FindFirstChild("Base")
@@ -216,7 +220,7 @@ function  FarmModule:gotoHive()
         warn("Base not found in patharrow")
         return
     end
-   	local success = self.manager.TweenHelper:tweenTo(Base.Position, self.manager.character)
-    
+
+   	return self.manager.TweenHelper:tweenTo(Base.Position, self.manager.character)
 end
 return FarmModule
