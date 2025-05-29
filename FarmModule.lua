@@ -1,39 +1,26 @@
-local Players = game:GetService("Players")
 local WP = game:GetService("Workspace")
 local CollectiblesFolder = WP:WaitForChild("Collectibles")
 
 local FarmModule = {}
 FarmModule.__index = FarmModule
 
-local itemToPickup = {}
-local startFarm = false
-local convertPollen = false
-local tokenMode = "First"
-local childAddedConn, childRemovedConn
-
 function FarmModule:init(managerRef)
     self.manager = managerRef
-    -- local LocalPlayer = Players.LocalPlayer
-    -- local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
-    -- character:WaitForChild("Humanoid")
-    -- character:WaitForChild("HumanoidRootPart")
-    -- self.character = character
+    self:initVariable()
 
-    -- LocalPlayer.CharacterAdded:Connect(function(char)
-    --     char:WaitForChild("Humanoid")
-    --     char:WaitForChild("HumanoidRootPart")
-    --     self.character = char
-
-    --     if startFarm then
-    --         task.wait(1)
-    --         self:startFarming()
-    --     end
-    -- end)
 
     if not managerRef.Hive then self:getUnclaimHive() end
     return self
 end
 
+function FarmModule:initVariable()
+    self.itemToPickup = {}
+    self.startFarm = false
+    self.convertPollen = false
+    self.tokenMode = "First"
+    self.childAddedConn = nil
+    self.childRemovedConn = nil
+end
 
 function FarmModule:startFarming()
     if not shared.main or not shared.main.currentField then
@@ -41,10 +28,7 @@ function FarmModule:startFarming()
         return
     end
 
-    startFarm = true
-    convertPollen = false
-    tokenMode = "First"
-    itemToPickup = {}
+    self:initVariable()
     self:setupListener()
     self:startGathering()
 end
@@ -56,15 +40,15 @@ function FarmModule:startGathering()
         print("Starting farming in field:", shared.main.currentField.Name)
     end)
     task.spawn(function()
-        while startFarm and not convertPollen do
-            while #itemToPickup > 0 do
+        while self.startFarm and not self.convertPollen do
+            while #self.itemToPickup > 0 do
                 local item = self:getNextItem()
                 if item and item:IsDescendantOf(CollectiblesFolder) and self:isInField(item.Position) then
                     self:moveTo(item.Position, item)
                 else
-                    for i, v in ipairs(itemToPickup) do
+                    for i, v in ipairs(self.itemToPickup) do
                         if v == item then
-                            table.remove(itemToPickup, i)
+                            table.remove(self.itemToPickup, i)
                             break
                         end
                     end
@@ -83,10 +67,10 @@ end
 
 function FarmModule:getNextItem()
     local character = self.manager.character
-    if tokenMode == "Nearest" and character then
+    if self.tokenMode == "Nearest" and character then
         local root = character.PrimaryPart
         local closestItem, shortestDist = nil, math.huge
-        for _, item in ipairs(itemToPickup) do
+        for _, item in ipairs(self.itemToPickup) do
             if item and item:IsDescendantOf(CollectiblesFolder) then
                 local dist = (item.Position - root.Position).Magnitude
                 if dist < shortestDist then
@@ -97,18 +81,19 @@ function FarmModule:getNextItem()
         end
         return closestItem
     else
-        return itemToPickup[1]
+        return self.itemToPickup[1]
     end
 end
 
 function FarmModule:stopFarming()
-    startFarm = false
-    if childAddedConn then
-        childAddedConn:Disconnect()
+    self.startFarm = false
+    if self.childAddedConn then
+        self.childAddedConn:Disconnect()
     end
-    if childRemovedConn then
-        childRemovedConn:Disconnect()
+    if self.childRemovedConn then
+        self.childRemovedConn:Disconnect()
     end
+    self:initVariable()
 end
 
 function FarmModule:moveTo(position, item)
@@ -128,7 +113,7 @@ function FarmModule:moveTo(position, item)
     end)
 
     while not reached and humanoid and humanoid.Health > 0 do
-        if not startFarm or convertPollen then
+        if not self.startFarm or self.convertPollen then
             if conn then conn:Disconnect() end
             break
         end
@@ -140,9 +125,9 @@ function FarmModule:moveTo(position, item)
     end
 
     if item and successResult then
-        for i, v in ipairs(itemToPickup) do
+        for i, v in ipairs(self.itemToPickup) do
             if v == item then
-                table.remove(itemToPickup, i)
+                table.remove(self.itemToPickup, i)
                 break
             end
         end
@@ -183,7 +168,7 @@ function FarmModule:isInField(position)
 end
 
 function FarmModule:changeTokenMode(mode)
-    tokenMode = mode
+    self.tokenMode = mode
 end
 
 function FarmModule:CharacterAdded(char)
@@ -201,7 +186,7 @@ function FarmModule:convertPollen()
     until Pollen <= 0
 
     convertPollen = false
-   if startFarm then  self:startGathering() end
+   if self.startFarm then  self:startGathering() end
 end
 
 
@@ -260,20 +245,20 @@ function FarmModule:checkingPollen()
 end
 
 function FarmModule:setupListener()
-    childAddedConn = CollectiblesFolder.ChildAdded:Connect(function(item)
-        table.insert(itemToPickup, item)
+    self.childAddedConn = CollectiblesFolder.ChildAdded:Connect(function(item)
+        table.insert(self.itemToPickup, item)
     end)
 
-    childRemovedConn = CollectiblesFolder.ChildRemoved:Connect(function(item)
-        for i, v in ipairs(itemToPickup) do
+    self.childRemovedConn = CollectiblesFolder.ChildRemoved:Connect(function(item)
+        for i, v in ipairs(self.itemToPickup) do
             if v == item then
-                table.remove(itemToPickup, i)
+                table.remove(self.itemToPickup, i)
                 break
             end
         end
     end)
     task.spawn(function()
-        while startFarm do
+        while self.startFarm do
             self:checkingPollen()
             task.wait(0.1)
         end

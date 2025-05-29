@@ -65,10 +65,10 @@ function FarmingManager:init()
         char:WaitForChild("HumanoidRootPart")
         self.character = char
 		self.FarmHelper:CharacterAdded(char)
-		
+
         if shared.main.startFarming then
             task.wait(3)
-            self:startFarming()
+            self.FarmHelper:startFarming()
         end
     end)
 end
