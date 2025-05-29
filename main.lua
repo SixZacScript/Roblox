@@ -2,7 +2,8 @@
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
 local DecorationsFolder = Workspace:WaitForChild("Decorations")
-local Window = loadstring(game:HttpGet('https://raw.githubusercontent.com/SixZacScript/Roblox/refs/heads/main/Window.lua'))()
+-- local Window = loadstring(game:HttpGet('https://raw.githubusercontent.com/SixZacScript/Roblox/refs/heads/main/Window.lua'))()
+local Window = loadstring(readfile("BeeSwarm/Window.lua"))()
 
 -- FarmingManager Class
 local FarmingManager = {}
@@ -11,7 +12,6 @@ FarmingManager.__index = FarmingManager
 function FarmingManager.new()
 	local self = setmetatable({}, FarmingManager)
 	-- External Helpers
-	-- self.TweenHelper = loadstring(game:HttpGet('https://raw.githubusercontent.com/SixZacScript/Roblox/refs/heads/main/TweenHelper.lua'))()
 	-- self.botHelper = loadstring(game:HttpGet('https://raw.githubusercontent.com/SixZacScript/Roblox/refs/heads/main/Bot.lua'))()
 	-- self.PlayerMovement = loadstring(game:HttpGet("https://raw.githubusercontent.com/SixZacScript/Roblox/refs/heads/main/PlayerMovement.lua"))()
 	-- self.TokenData = loadstring(game:HttpGet("https://raw.githubusercontent.com/SixZacScript/Roblox/refs/heads/main/TokenData.lua"))()
