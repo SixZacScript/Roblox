@@ -707,7 +707,7 @@ end
 if UserInputService.TouchEnabled then
 	useMobilePrompt = true
 end
-
+print('useMobileSizing: ', useMobilePrompt)
 
 -- Object Variables
 
