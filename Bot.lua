@@ -86,6 +86,7 @@ function Bot:startFarming(field)
     if self.farming then return end
     self.farming = true
     self.currentField = field
+    print("Starting farming at field:", field.Name)
     self:addTask({type = "farm",field = field})
 
 end
