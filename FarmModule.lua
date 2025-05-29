@@ -216,6 +216,7 @@ function FarmModule:getUnclaimHive()
             local Event = game:GetService("ReplicatedStorage").Events.ClaimHive
             Event:FireServer(table.unpack({index}))
             self.manager.Hive = hive
+            print("Claimed hive at index:", index)
             return hive
         end
     end
@@ -223,9 +224,6 @@ end
 
 function FarmModule:gotoHive(onComplete)
     local Hive = self.manager.Hive
-    if not Hive then
-        Hive = self:getUnclaimHive()
-    end
     local patharrow = Hive and Hive:FindFirstChild("patharrow")
     local Base = patharrow and patharrow:FindFirstChild("Base")
     if not Base then
