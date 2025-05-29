@@ -222,9 +222,10 @@ function FarmModule:gotoHive(onComplete)
     local tween = self.manager.TweenHelper:tweenTo(Base.Position, self.manager.character, onComplete)
     return tween
 end
-function  FarmModule:checkingPollen()
+function FarmModule:checkingPollen()
+    if convertPollen then return true end 
     local Capacity, Pollen = shared.main.Capacity, shared.main.Pollen
-    if Pollen >= Capacity and not convertPollen then
+    if Pollen >= Capacity then
         convertPollen = true
         self:gotoHive(function()
             task.wait(1)
@@ -234,6 +235,7 @@ function  FarmModule:checkingPollen()
     end
     return convertPollen
 end
+
 function FarmModule:setupListener()
     childAddedConn = CollectiblesFolder.ChildAdded:Connect(function(item)
         table.insert(itemToPickup, item)
