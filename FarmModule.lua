@@ -18,7 +18,7 @@ function FarmModule:init(managerRef)
     character:WaitForChild("Humanoid")
     character:WaitForChild("HumanoidRootPart")
     self.character = character
-       self:gotoHive() 
+    self:gotoHive() 
     return self
 end
 
@@ -201,7 +201,7 @@ function  FarmModule:gotoHive()
         warn("Base not found in patharrow")
         return
     end
-    print("Moving to Hive Base")
+   	local success = self.manager.TweenHelper:tweenTo(Base.Position, self.character)
     
 end
 return FarmModule
