@@ -4,6 +4,7 @@ local Bot = {}
 Bot.__index = Bot
 
 function Bot.new(character)
+    print("Bot initialized for character:", character.Name)
 	local self = setmetatable({}, Bot)
 	self.character = character
 	self.taskQueue = {}
@@ -12,6 +13,7 @@ function Bot.new(character)
 end
 
 function Bot:addTask(task)
+    print("Adding task:", task.type, "for character:", self.character.Name)
 	table.insert(self.taskQueue, task)
 	if not self.isRunning then
 		self:runTasks()

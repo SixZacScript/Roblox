@@ -121,7 +121,7 @@ function FarmingManager:createUI()
 		Name = "Start Farming",
 		CurrentValue = false,
 		Callback = function(value)
-			if not value then return self.FarmHelper:stopFarming() end
+			-- if not value then return self.FarmHelper:stopFarming() end
 			shared.main.startFarming = true
 			-- self:updateCharacter()
 			-- local field = self.flowerZones:FindFirstChild(self.selectedZone)
