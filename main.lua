@@ -121,30 +121,13 @@ function FarmingManager:createUI()
 		Name = "Start Farming",
 		CurrentValue = false,
 		Callback = function(value)
-			-- if not value then return self.FarmHelper:stopFarming() end
+			if not value then 
+				shared.main.startFarming = false
+				self.botHelper:addTask({type = "stop"})
+				return
+			end
 			shared.main.startFarming = true
-			-- self:updateCharacter()
-			-- local field = self.flowerZones:FindFirstChild(self.selectedZone)
-			-- local success = self.TweenHelper:tweenTo(field.Position, self.character)
-			-- if success then
-			self.botHelper:addTask({
-				type = "fly",
-				position = shared.main.currentField.Position,
-				onComplete = function()
-					print("Flew to position.")
-				end
-			})
-			-- self.botHelper:addTask({
-			-- 	type = "fly",
-			-- 	position = shared.main.currentField.Position,
-			-- 	onComplete = function()
-			-- 		print("fly to field:", shared.main.currentField.Name)
-			-- 	end
-			-- })
-			-- self.FarmHelper:startFarming()
-			-- else
-			-- 	print("Tween was interrupted or character destroyed.")
-			-- end
+			self.botHelper:addTask({type = "farm", field = shared.main.currentField})
 		end
 	})
 	mainTab:CreateDropdown({

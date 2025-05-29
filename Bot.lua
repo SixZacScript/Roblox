@@ -41,6 +41,8 @@ function Bot:executeTask(taskData)
 		self:walkTo(taskData.position, taskData.onComplete)
 	elseif taskData.type == "fly" then
 		self:flyTo(taskData.position, taskData.onComplete)
+    elseif taskData.type == "stop" then
+        print("Stopping farming for character:", self.character.Name)
 	end
 end
 
@@ -74,8 +76,8 @@ function Bot:walkTo(position, onComplete)
 	end)
 end
 
-function Bot:farmAt(fieldName, onComplete)
-	print("Farming at", fieldName)
+function Bot:farmAt(Field, onComplete)
+	print("Farming at", Field.Name)
 	-- Simulate farming with delay
 	task.delay(2, function()
 		if onComplete then onComplete() end
