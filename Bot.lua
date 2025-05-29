@@ -1,4 +1,6 @@
 local TweenService = game:GetService("TweenService")
+local WP  = game:GetService("Workspace")
+local CollectiblesFolder = WP:WaitForChild("Collectibles")
 
 local Bot = {}
 Bot.__index = Bot
@@ -8,8 +10,30 @@ function Bot.new(character, manageRef)
 	self.character = character
     self.manageRef = manageRef 
 	self.taskQueue = {}
+    self.items = {}
 	self.isRunning = false
     self.farming = false
+
+    CollectiblesFolder.ChildAdded:Connect(function(item)
+        if item:IsA("BasePart") and item.Name ~= "Baseplate" then
+            table.insert(self.items, item)
+            if self.farming then
+                self:addTask({
+                    type = "move",
+                    position = item.Position,
+                    onComplete = function()
+                        print("Picked up item:", item.Name)
+                        for i, v in ipairs(self.items) do
+                            if v == item then
+                                table.remove(self.items, i)
+                                break
+                            end
+                        end
+                    end
+                })
+            end
+        end
+    end)
 	return self
 end
 
@@ -78,20 +102,6 @@ function Bot:walkTo(position, onComplete)
 		if conn then conn:Disconnect() end
 		if onComplete then onComplete() end
 	end)
-
-	local UserInputService = game:GetService("UserInputService")
-	local inputConn
-	inputConn = UserInputService.InputBegan:Connect(function(input, gameProcessed)
-		if not gameProcessed and input.UserInputType == Enum.UserInputType.Keyboard then
-            self.manageRef.farmToggle:setValue(false)
-			print("Player pressed:", input.KeyCode.Name)
-		end
-	end)
-
-	coroutine.wrap(function()
-		task.wait(2)
-		if inputConn then inputConn:Disconnect() end
-	end)()
 end
 
 function  Bot:stopFarming()
@@ -118,9 +128,12 @@ function Bot:farmAt(Field, onComplete)
     local function moveNext()
         if not self.farming then return end
         local nextPos = getRandomPositionInField()
-        self:walkTo(nextPos, function()
-             moveNext()
-        end)
+        self:addTask({
+            type = "move",
+            position = nextPos, function()
+                moveNext()
+            end
+        })
     end
 
     self:flyTo(FieldPosition, function()
