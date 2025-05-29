@@ -53,7 +53,8 @@ function FarmingManager:init()
 		Honey = self.Honey.Value or 0,
 		Hove = self.Hive,
 	}
-	self.botHelper.new(self.character)
+	self.botHelper = self.botHelper.new(self.character)
+
 	self:createUI()
 
 	for _, prop in ipairs({"Capacity", "Pollen", "Honey"}) do
@@ -130,9 +131,16 @@ function FarmingManager:createUI()
 				type = "fly",
 				position = shared.main.currentField.Position,
 				onComplete = function()
-					print("fly to field:", shared.main.currentField.Name)
+					print("Flew to position.")
 				end
 			})
+			-- self.botHelper:addTask({
+			-- 	type = "fly",
+			-- 	position = shared.main.currentField.Position,
+			-- 	onComplete = function()
+			-- 		print("fly to field:", shared.main.currentField.Name)
+			-- 	end
+			-- })
 			-- self.FarmHelper:startFarming()
 			-- else
 			-- 	print("Tween was interrupted or character destroyed.")
