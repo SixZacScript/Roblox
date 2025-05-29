@@ -1,4 +1,5 @@
 local TweenService = game:GetService("TweenService")
+local Players = game:GetService("Players")
 local WP  = game:GetService("Workspace")
 local CollectiblesFolder = WP:WaitForChild("Collectibles")
 
@@ -24,6 +25,17 @@ function Bot.new(character, manageRef)
             end
         end
     end)
+    local player = Players:GetPlayerFromCharacter(character)
+    if player then
+        player.CharacterAdded:Connect(function(newChar)
+            task.wait(1)
+            self.character = newChar
+            self:initVariable()
+            if self.farming and self.currentField then
+                self:startFarming(self.currentField)
+            end
+        end)
+    end
 
 	return self
 end
