@@ -94,10 +94,10 @@ function FarmingManager:createUI()
 		Callback = function(zone)
 			self.selectedZone = typeof(zone) == "table" and zone[1] or zone
 			shared.main.currentField = self.flowerZones:FindFirstChild(self.selectedZone)
-			-- if shared.main.startFarming then
-			-- 	self.FarmHelper:stopFarming()
-			-- 	self.FarmHelper:startFarming()
-			-- end
+			if shared.main.startFarming then
+				self.botHelper:stopFarming()
+				self.botHelper:startFarming()
+			end
 		end
 	})
 

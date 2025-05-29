@@ -9,13 +9,7 @@ function Bot.new(character, manageRef)
 	local self = setmetatable({}, Bot)
 	self.character = character
     self.manageRef = manageRef 
-	self.taskQueue = {}
-    self.items = {}
-	self.isRunning = false
-    self.farming = false
-    self.movingConnection = nil
-    self.heartbeatConnection = nil
-    self.currentTarget = nil
+    self:initVariable()
 
     CollectiblesFolder.ChildAdded:Connect(function(item)
         if item:IsA("BasePart") then
@@ -33,7 +27,15 @@ function Bot.new(character, manageRef)
 
 	return self
 end
-
+function Bot:initVariable()
+    self.taskQueue = {}
+    self.items = {}
+	self.isRunning = false
+    self.farming = false
+    self.movingConnection = nil
+    self.heartbeatConnection = nil
+    self.currentTarget = nil
+end
 function Bot:addTask(task)
 	table.insert(self.taskQueue, task)
 	if not self.isRunning then
@@ -134,7 +136,15 @@ function Bot:walkTo(position, onComplete)
 end
 
 function  Bot:stopFarming()
-    self.farming = false
+    self:initVariable()
+    if self.movingConnection then
+        self.movingConnection:Disconnect()
+        self.movingConnection = nil
+    end
+    if self.heartbeatConnection then
+        self.heartbeatConnection:Disconnect()
+        self.heartbeatConnection = nil
+    end
 end
 function Bot:startFarming(field)
     if self.farming then return end
