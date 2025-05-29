@@ -51,6 +51,17 @@ function Bot:initVariable()
     self.heartbeatConnection = nil
     self.currentTarget = nil
 end
+function Bot:clearConnection()
+    if self.movingConnection then
+        self.movingConnection:Disconnect()
+        self.movingConnection = nil
+    end
+    if self.heartbeatConnection then
+        self.heartbeatConnection:Disconnect()
+        self.heartbeatConnection = nil
+    end
+end
+
 function Bot:addTask(task)
 	table.insert(self.taskQueue, task)
 	if not self.isRunning then
@@ -108,58 +119,31 @@ function Bot:walkTo(position, onComplete)
 	print("Moving to:", position)
 	humanoid:MoveTo(position)
 	self.currentTarget = position
-
-	if self.movingConnection then
-		self.movingConnection:Disconnect()
-	end
-	if self.heartbeatConnection then
-		self.heartbeatConnection:Disconnect()
-	end
+    self:clearConnection()
 
     self.heartbeatConnection = game:GetService("RunService").Heartbeat:Connect(function()
         if self.farming and #self.items > 0 then
             local item = self.items[1]
             if item and (not self.currentTarget or (self.currentTarget - item.Position).Magnitude > 1) then
-                print("Go to item")
-                if self.movingConnection then
-                    self.movingConnection:Disconnect()
-                    self.movingConnection = nil
-                end
-                if self.heartbeatConnection then
-                    self.heartbeatConnection:Disconnect()
-                    self.heartbeatConnection = nil
-                end
+                self:clearConnection()
                 self:walkTo(item.Position, function()
                     table.remove(self.items, 1)
                     if onComplete then onComplete() end
                 end)
             end
         end
+        if not self.farming  then self:clearConnection() return end
     end)
 
 	self.movingConnection = humanoid.MoveToFinished:Connect(function(reached)
-		if self.movingConnection then
-			self.movingConnection:Disconnect()
-			self.movingConnection = nil
-		end
-		if self.heartbeatConnection then
-			self.heartbeatConnection:Disconnect()
-			self.heartbeatConnection = nil
-		end
+        self:clearConnection()
 		if onComplete then onComplete() end
 	end)
 end
 
 function  Bot:stopFarming()
     self:initVariable()
-    if self.movingConnection then
-        self.movingConnection:Disconnect()
-        self.movingConnection = nil
-    end
-    if self.heartbeatConnection then
-        self.heartbeatConnection:Disconnect()
-        self.heartbeatConnection = nil
-    end
+    self:clearConnection()
 end
 function Bot:startFarming(field)
     if self.farming and self.currentField == field then return end
