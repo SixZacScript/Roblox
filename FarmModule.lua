@@ -243,6 +243,7 @@ function FarmModule:setupListener()
                 convertPollen = true
                 self:gotoHive(function()
                     print("Converting pollen to honey...")
+                    task.wait(1)
                     self:convertPollen()
                     
                 end)
