@@ -12,7 +12,7 @@ function FarmingManager.new()
 	-- External Helpers
 	self.TweenHelper = loadstring(game:HttpGet('https://raw.githubusercontent.com/SixZacScript/Roblox/refs/heads/main/TweenHelper.lua'))()
 	-- self.FarmHelper = loadstring(game:HttpGet('https://raw.githubusercontent.com/SixZacScript/Roblox/refs/heads/main/FarmModule.lua'))()
-	self.FarmHelper = loadstring(game:HttpGet('https://raw.githubusercontent.com/SixZacScript/Roblox/refs/heads/main/FarmModule.lua'))()
+	self.botHelper = loadstring(game:HttpGet('https://raw.githubusercontent.com/SixZacScript/Roblox/refs/heads/main/Bot.lua'))()
 	self.PlayerMovement = loadstring(game:HttpGet("https://raw.githubusercontent.com/SixZacScript/Roblox/refs/heads/main/PlayerMovement.lua"))()
 	self.TokenData = loadstring(game:HttpGet("https://raw.githubusercontent.com/SixZacScript/Roblox/refs/heads/main/TokenData.lua"))()
 	-- Initialize services and properties
@@ -53,7 +53,7 @@ function FarmingManager:init()
 		Honey = self.Honey.Value or 0,
 		Hove = self.Hive,
 	}
-	self.FarmHelper:init(self)
+	self.botHelper.new(self.character)
 	self:createUI()
 
 	for _, prop in ipairs({"Capacity", "Pollen", "Honey"}) do
@@ -61,17 +61,17 @@ function FarmingManager:init()
 			shared.main[prop] = self[prop].Value
 		end)
 	end
-    self.localPlayer.CharacterAdded:Connect(function(char)
-        char:WaitForChild("Humanoid")
-        char:WaitForChild("HumanoidRootPart")
-        self.character = char
-		self.FarmHelper:CharacterAdded(char)
+    -- self.localPlayer.CharacterAdded:Connect(function(char)
+    --     char:WaitForChild("Humanoid")
+    --     char:WaitForChild("HumanoidRootPart")
+    --     self.character = char
+	-- 	self.FarmHelper:CharacterAdded(char)
 
-        if shared.main.startFarming then
-            task.wait(3)
-            self.FarmHelper:startFarming()
-        end
-    end)
+    --     if shared.main.startFarming then
+    --         task.wait(3)
+    --         self.FarmHelper:startFarming()
+    --     end
+    -- end)
 end
 
 function FarmingManager:updateCharacter()
@@ -93,10 +93,10 @@ function FarmingManager:createUI()
 		Callback = function(zone)
 			self.selectedZone = typeof(zone) == "table" and zone[1] or zone
 			shared.main.currentField = self.flowerZones:FindFirstChild(self.selectedZone)
-			if shared.main.startFarming then
-				self.FarmHelper:stopFarming()
-				self.FarmHelper:startFarming()
-			end
+			-- if shared.main.startFarming then
+			-- 	self.FarmHelper:stopFarming()
+			-- 	self.FarmHelper:startFarming()
+			-- end
 		end
 	})
 
@@ -126,7 +126,14 @@ function FarmingManager:createUI()
 			-- local field = self.flowerZones:FindFirstChild(self.selectedZone)
 			-- local success = self.TweenHelper:tweenTo(field.Position, self.character)
 			-- if success then
-				self.FarmHelper:startFarming()
+			self.botHelper:addTask({
+				type = "fly",
+				position = shared.main.currentField.Position,
+				onComplete = function()
+					print("fly to field:", shared.main.currentField.Name)
+				end
+			})
+			-- self.FarmHelper:startFarming()
 			-- else
 			-- 	print("Tween was interrupted or character destroyed.")
 			-- end
@@ -139,7 +146,7 @@ function FarmingManager:createUI()
 		Callback = function(mode)
 			local newMode = typeof(mode) == "table" and mode[1] or mode
             shared.main.tokenMode = newMode
-			self.FarmHelper:changeTokenMode(newMode)
+			-- self.FarmHelper:changeTokenMode(newMode)
 		end
 	})
 	mainTab:CreateSection("Collect Only Token")
