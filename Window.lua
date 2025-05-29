@@ -1,4 +1,4 @@
-local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+local Rayfield = loadstring(game:HttpGet('https://raw.githubusercontent.com/SixZacScript/Roblox/refs/heads/main/Rayfield.lua'))()
 return Rayfield:CreateWindow({
     Name = "Sippy Hub | SixZacScript",
     LoadingTitle = "Rayfield Interface Suite",
