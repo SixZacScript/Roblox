@@ -8,6 +8,7 @@ FarmModule.__index = FarmModule
 local itemToPickup = {}
 local startFarm = false
 local convertPollen = false
+local convertingPollen = false
 local tokenMode = "First"
 local childAddedConn, childRemovedConn
 
@@ -190,6 +191,11 @@ function FarmModule:changeTokenMode(mode)
 end
 
 function FarmModule:convertPollen()
+    if convertingPollen then
+        warn("Already converting pollen")
+        return
+    end
+
     local Capacity, Pollen = shared.main.Capacity, shared.main.Pollen
     local Event = game:GetService("ReplicatedStorage").Events.PlayerHiveCommand
     Event:FireServer(table.unpack({
@@ -199,6 +205,7 @@ function FarmModule:convertPollen()
         task.wait(3)
     until shared.main.Pollen <= 0
     convertPollen = false
+    convertingPollen = false
 
 end
 

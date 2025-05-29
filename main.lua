@@ -95,7 +95,7 @@ function FarmingManager:createUI()
 			shared.main.autoDigEnabled = value
             if not value then return end
             while shared.main.autoDigEnabled do
-				if shared.main.Pollen.Value < shared.main.Capacity.Value then
+				if shared.main.Pollen < shared.main.Capacity then
 					local Event = game:GetService("ReplicatedStorage").Events.ToolCollect
 					Event:FireServer()
 				end
