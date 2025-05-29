@@ -110,14 +110,14 @@ function FarmingManager:createUI()
 		Callback = function(value)
 			if not value then return self.FarmHelper:stopFarming() end
 			shared.main.startFarming = true
-			self:updateCharacter()
-			local field = self.flowerZones:FindFirstChild(self.selectedZone)
-			local success = self.TweenHelper:tweenTo(field.Position, self.character)
-			if success then
+			-- self:updateCharacter()
+			-- local field = self.flowerZones:FindFirstChild(self.selectedZone)
+			-- local success = self.TweenHelper:tweenTo(field.Position, self.character)
+			-- if success then
 				self.FarmHelper:startFarming()
-			else
-				print("Tween was interrupted or character destroyed.")
-			end
+			-- else
+			-- 	print("Tween was interrupted or character destroyed.")
+			-- end
 		end
 	})
 	mainTab:CreateDropdown({
