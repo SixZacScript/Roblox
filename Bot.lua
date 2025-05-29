@@ -133,15 +133,20 @@ function Bot:farmAt(Field, onComplete)
         local nextPos = getRandomPositionInField()
         self:addTask({
             type = "move",
-            position = nextPos, function()
+            position = nextPos,
+            onComplete = function()
                 moveNext()
             end
         })
-    end
 
-    self:flyTo(FieldPosition, function()
-        moveNext()
-    end)
+    end
+    self:addTask({
+        type = "fly",
+        position = FieldPosition,
+        onComplete = function()
+            moveNext()
+        end
+    })
 end
 
 return Bot
