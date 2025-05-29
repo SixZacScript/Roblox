@@ -101,7 +101,7 @@ function Bot:flyTo(position, onComplete)
 	local rootPart = self.character:FindFirstChild("HumanoidRootPart")
 	if not rootPart then return end
 
-	local duration = 0.6
+	local duration = shared.main.tweenSpeed or 0.6
 	local tween = TweenService:Create(rootPart, TweenInfo.new(duration, Enum.EasingStyle.Linear), {
 		CFrame = CFrame.new(position)
 	})
