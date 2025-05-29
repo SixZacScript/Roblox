@@ -4,7 +4,6 @@ local Bot = {}
 Bot.__index = Bot
 
 function Bot.new(character)
-    print("Bot initialized for character:", character.Name)
 	local self = setmetatable({}, Bot)
 	self.character = character
 	self.taskQueue = {}
@@ -22,8 +21,6 @@ end
 
 function Bot:runTasks()
 	self.isRunning = true
-    print("Running tasks for character:", self.character.Name)
-    print("Total tasks in queue:", #self.taskQueue)
 	task.spawn(function()
 		while #self.taskQueue > 0 do
 			local taskData = table.remove(self.taskQueue, 1)
@@ -93,12 +90,26 @@ function Bot:startFarming(field)
 
 end
 function Bot:farmAt(Field, onComplete)
+    local FieldPosition = Field.Position + Vector3.new(0,3,0)
+    local function getRandomPositionInField()
+        local size = Field.Size
+        local origin = Field.Position
+        local x = math.random(-size.X / 2, size.X / 2)
+        local z = math.random(-size.Z / 2, size.Z / 2)
+        return Vector3.new(origin.X + x, origin.Y + 3, origin.Z + z)
+    end
 
-    self:flyTo(Field.Position, function()
-        
+    local function moveNext()
+        if not self.farming then return end
+        local nextPos = getRandomPositionInField()
+        self:walkTo(nextPos, function()
+             moveNext()
+        end)
+    end
+
+    self:flyTo(FieldPosition, function()
+        moveNext()
     end)
-	print("Farming at", Field.Name)
-
 end
 
 return Bot
