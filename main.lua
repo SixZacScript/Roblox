@@ -1,6 +1,7 @@
 -- Services
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
+local DecorationsFolder = Workspace:WaitForChild("Decorations")
 local Window = loadstring(game:HttpGet('https://raw.githubusercontent.com/SixZacScript/Roblox/refs/heads/main/Window.lua'))()
 
 -- FarmingManager Class
@@ -10,11 +11,15 @@ FarmingManager.__index = FarmingManager
 function FarmingManager.new()
 	local self = setmetatable({}, FarmingManager)
 	-- External Helpers
-	self.TweenHelper = loadstring(game:HttpGet('https://raw.githubusercontent.com/SixZacScript/Roblox/refs/heads/main/TweenHelper.lua'))()
-	-- self.FarmHelper = loadstring(game:HttpGet('https://raw.githubusercontent.com/SixZacScript/Roblox/refs/heads/main/FarmModule.lua'))()
-	self.botHelper = loadstring(game:HttpGet('https://raw.githubusercontent.com/SixZacScript/Roblox/refs/heads/main/Bot.lua'))()
-	self.PlayerMovement = loadstring(game:HttpGet("https://raw.githubusercontent.com/SixZacScript/Roblox/refs/heads/main/PlayerMovement.lua"))()
-	self.TokenData = loadstring(game:HttpGet("https://raw.githubusercontent.com/SixZacScript/Roblox/refs/heads/main/TokenData.lua"))()
+	-- self.TweenHelper = loadstring(game:HttpGet('https://raw.githubusercontent.com/SixZacScript/Roblox/refs/heads/main/TweenHelper.lua'))()
+	-- self.botHelper = loadstring(game:HttpGet('https://raw.githubusercontent.com/SixZacScript/Roblox/refs/heads/main/Bot.lua'))()
+	-- self.PlayerMovement = loadstring(game:HttpGet("https://raw.githubusercontent.com/SixZacScript/Roblox/refs/heads/main/PlayerMovement.lua"))()
+	-- self.TokenData = loadstring(game:HttpGet("https://raw.githubusercontent.com/SixZacScript/Roblox/refs/heads/main/TokenData.lua"))()
+	self.botHelper = loadstring(readfile("BeeSwarm/Bot.lua"))()
+    self.PlayerMovement = loadstring(readfile("BeeSwarm/PlayerMovement.lua"))()
+    self.TokenData = loadstring(readfile("BeeSwarm/TokenData.lua"))()
+    -- self.hiveHelper = loadstring(readfile("BeeSwarm/Hive.lua"))()
+
 	-- Initialize services and properties
 	self.localPlayer = Players.LocalPlayer
 	self.CoreStats = self.localPlayer:WaitForChild("CoreStats")
@@ -45,17 +50,20 @@ function FarmingManager:init()
 
 	shared.main = {
 		currentField = self.flowerZones:FindFirstChild(self.selectedZone),
-		startFarming = true,
+		startFarming = false,
 		autoDigEnabled = true,
+		convertPollen = false,
 		tokenMode = 'First',
+		tokenList = {},
 		Pollen = self.Pollen.Value or 0,
 		Capacity = self.Capacity.Value or 0,
 		Honey = self.Honey.Value or 0,
 		Hove = self.Hive,
 		tweenSpeed = 0.6,
-		tokenRadius = 30,
+		tokenRadius = 35,
 
 	}
+	-- shared.hiveHelper = self.hiveHelper.new(self.character, self)
 	self.botHelper = self.botHelper.new(self.character, self)
 
 	self:createUI()
@@ -63,19 +71,9 @@ function FarmingManager:init()
 	for _, prop in ipairs({"Capacity", "Pollen", "Honey"}) do
 		self[prop]:GetPropertyChangedSignal("Value"):Connect(function()
 			shared.main[prop] = self[prop].Value
+			if shared.main.startFarming then self.botHelper:checkPollen() end
 		end)
 	end
-    -- self.localPlayer.CharacterAdded:Connect(function(char)
-    --     char:WaitForChild("Humanoid")
-    --     char:WaitForChild("HumanoidRootPart")
-    --     self.character = char
-	-- 	self.FarmHelper:CharacterAdded(char)
-
-    --     if shared.main.startFarming then
-    --         task.wait(3)
-    --         self.FarmHelper:startFarming()
-    --     end
-    -- end)
 end
 
 function FarmingManager:updateCharacter()
@@ -87,6 +85,7 @@ end
 function FarmingManager:createUI()
 	local mainTab = Window:CreateTab("Main", "flower")
 	local movementTab = Window:CreateTab("Movement", "dumbbell")
+	local bindTab = Window:CreateTab("Keybinds", "keyboard")
 
 	mainTab:CreateSection("Farming Zones")
 
@@ -98,8 +97,10 @@ function FarmingManager:createUI()
 			self.selectedZone = typeof(zone) == "table" and zone[1] or zone
 			shared.main.currentField = self.flowerZones:FindFirstChild(self.selectedZone)
 			if shared.main.startFarming then
-				self.botHelper:stopFarming()
-				self.botHelper:startFarming()
+				self.botHelper:checkPollen(function()
+					self.botHelper:stopFarming()
+					self.botHelper:startFarming()
+				end)
 			end
 		end
 	})
@@ -130,7 +131,7 @@ function FarmingManager:createUI()
 				return
 			end
 			shared.main.startFarming = true
-			self.botHelper:addTask({type = "start", field = shared.main.currentField})
+			self.botHelper:addTask({type = "start"})
 		end
 	})
 	mainTab:CreateDropdown({
@@ -144,22 +145,48 @@ function FarmingManager:createUI()
 		end
 	})
 	mainTab:CreateSection("Collect Only Token")
-	shared.tokenToggles = {}
 
+
+	local sorted = {}
 	for name, assetID in pairs(self.TokenData) do
-		local toggle = mainTab:CreateToggle({
+		table.insert(sorted, {name = name, assetID = assetID})
+	end
+
+	table.sort(sorted, function(a, b)
+		return a.name < b.name
+	end)
+
+	for _, item in ipairs(sorted) do
+		local name, assetID = item.name, item.assetID
+		mainTab:CreateToggle({
 			Name = name,
 			Flag = tostring(assetID),
-			CurrentValue = false,
+			CurrentValue = true,
 			Callback = function(value)
-				shared.main[assetID] = value
+				shared.main.tokenList[assetID] = value
 				print(name .. " toggled:", value)
 			end
 		})
-		shared.tokenToggles[assetID] = toggle
+		shared.main.tokenList[assetID] = true
 	end
 
 	self.PlayerMovement:start(movementTab)
+
+	local Keybind = bindTab:CreateKeybind({
+		Name = "Toggle Farming",
+		CurrentKeybind = "Q",
+		HoldToInteract = false,
+		Flag = "Keybind1",
+		Callback = function(Keybind)
+			self.farmToggle:Set(not shared.main.startFarming)
+		end,
+	})
+	for _, part in pairs(DecorationsFolder:GetDescendants()) do
+		if part:IsA("BasePart") then
+			part.CanCollide = false
+			part.Transparency = 0.3
+		end
+	end
 end
 
 FarmingManager.new()
