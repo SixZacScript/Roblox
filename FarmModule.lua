@@ -34,7 +34,8 @@ function FarmModule:startFarming()
 end
 
 function FarmModule:startGathering()
-    self:checkingPollen()
+   local isConverting =  self:checkingPollen()
+   if isConverting then return end
     self:gotoField(function()
         print("Starting farming in field:", shared.main.currentField.Name)
     end)
@@ -231,6 +232,7 @@ function  FarmModule:checkingPollen()
             self:convertPollen()
         end)
     end
+    return convertPollen
 end
 function FarmModule:setupListener()
     childAddedConn = CollectiblesFolder.ChildAdded:Connect(function(item)
