@@ -8,7 +8,6 @@ FarmModule.__index = FarmModule
 local itemToPickup = {}
 local startFarm = false
 local convertPollen = false
-local convertingPollen = false
 local tokenMode = "First"
 local childAddedConn, childRemovedConn
 
@@ -20,7 +19,6 @@ function FarmModule:init(managerRef)
     character:WaitForChild("HumanoidRootPart")
     self.character = character
     if not managerRef.Hive then self:getUnclaimHive() end
-
     return self
 end
 
@@ -37,9 +35,10 @@ function FarmModule:startFarming()
             local Capacity, Pollen = shared.main.Capacity, shared.main.Pollen
             if Pollen >= Capacity and not convertPollen then
                 convertPollen = true
-                local gotoHiveResult = self:gotoHive()
-                -- print("Going to Hive:", gotoHiveResult)
-                self:convertPollen()
+                self:gotoHive(function()
+                     self:convertPollen()
+                    print("Arrived at hive!")
+                end)
             end
             task.wait(0.1)
         end
@@ -191,7 +190,7 @@ function FarmModule:changeTokenMode(mode)
 end
 
 function FarmModule:convertPollen()
-    if convertingPollen then
+    if convertPollen then
         warn("Already converting pollen")
         return
     end
@@ -205,7 +204,7 @@ function FarmModule:convertPollen()
         task.wait(3)
     until shared.main.Pollen <= 0
     convertPollen = false
-    convertingPollen = false
+
 
 end
 
@@ -216,16 +215,16 @@ function FarmModule:getUnclaimHive()
         if OwnerObject and not OwnerObject.Value then
             local Event = game:GetService("ReplicatedStorage").Events.ClaimHive
             Event:FireServer(table.unpack({index}))
+            self.manager.Hive = hive
             return hive
         end
     end
 end
 
-function  FarmModule:gotoHive()
+function FarmModule:gotoHive(onComplete)
     local Hive = self.manager.Hive
     if not Hive then
-        self.manager.Hive = self:getUnclaimHive()
-        Hive = self.manager.Hive
+        Hive = self:getUnclaimHive()
     end
     local patharrow = Hive and Hive:FindFirstChild("patharrow")
     local Base = patharrow and patharrow:FindFirstChild("Base")
@@ -234,6 +233,9 @@ function  FarmModule:gotoHive()
         return
     end
 
-   	return self.manager.TweenHelper:tweenTo(Base.Position, self.manager.character)
+    local tween = self.manager.TweenHelper:tweenTo(Base.Position, self.manager.character)
+    if tween and onComplete then onComplete() end
+    return tween
 end
+
 return FarmModule
