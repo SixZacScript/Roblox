@@ -14,29 +14,20 @@ function Bot.new(character, manageRef)
 	self.isRunning = false
     self.farming = false
 
-    -- CollectiblesFolder.ChildAdded:Connect(function(item)
-    --     if item:IsA("BasePart") and item.Name ~= "Baseplate" then
-    --         table.insert(self.items, item)
-    --         if self.farming then
-    --             local rootPart = self.character:FindFirstChild("HumanoidRootPart")
-    --             if rootPart and (rootPart.Position - item.Position).Magnitude <= 30 then
-    --                 self:addTask({
-    --                     type = "move",
-    --                     position = item.Position,
-    --                     onComplete = function()
-    --                         print("Picked up item:", item.Name)
-    --                         for i, v in ipairs(self.items) do
-    --                             if v == item then
-    --                                 table.remove(self.items, i)
-    --                                 break
-    --                             end
-    --                         end
-    --                     end
-    --                 })
-    --             end
-    --         end
-    --     end
-    -- end)
+    CollectiblesFolder.ChildAdded:Connect(function(item)
+        if item:IsA("BasePart") then
+            table.insert(self.items, item)
+        end
+    end)
+    CollectiblesFolder.ChildRemoved:Connect(function(item)
+        for i, v in ipairs(self.items) do
+            if v == item then
+                table.remove(self.items, i)
+                break
+            end
+        end
+    end)
+
 	return self
 end
 
@@ -61,12 +52,10 @@ end
 
 function Bot:executeTask(taskData)
     print("Executing task:", taskData.type)
-	if taskData.type == "move" then
+	if taskData.type == "walk" then
 		self:moveTo(taskData.position, taskData.onComplete)
 	elseif taskData.type == "farm" then
 		self:farmAt(taskData.field, taskData.onComplete)
-	elseif taskData.type == "walk" then
-		self:walkTo(taskData.position, taskData.onComplete)
 	elseif taskData.type == "fly" then
 		self:flyTo(taskData.position, taskData.onComplete)
     elseif taskData.type == "start" then
@@ -132,7 +121,7 @@ function Bot:farmAt(Field, onComplete)
         if not self.farming then return end
         local nextPos = getRandomPositionInField()
         self:addTask({
-            type = "move",
+            type = "walk",
             position = nextPos,
             onComplete = function()
                 moveNext()
