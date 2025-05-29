@@ -26,8 +26,8 @@ function FarmingManager.new()
 	self.Pollen = self.CoreStats:WaitForChild("Pollen")
 	self.Honey = self.CoreStats:WaitForChild("Honey")
 	self.Capacity = self.CoreStats:WaitForChild("Capacity")
-	self.HoneycombObject = self.localPlayer:WaitForChild("Honeycomb")
-	self.Hive = self.HoneycombObject.Value or nil
+	self.HoneycombObject = self.localPlayer:FindFirstChild("Honeycomb")
+	self.Hive = self.HoneycombObject and self.HoneycombObject.Value or nil
 	-- Initialize other properties
 	self.zoneNames = {}
 	self.selectedZone = "Dandelion Field"
@@ -47,9 +47,9 @@ function FarmingManager:init()
 		startFarming = true,
 		autoDigEnabled = true,
 		tokenMode = 'First',
-		Pollen = self.Pollen or 0,
-		Capacity = self.Capacity or 0,
-		Honey = self.Honey or 0,
+		Pollen = self.Pollen.Value or 0,
+		Capacity = self.Capacity.Value or 0,
+		Honey = self.Honey.Value or 0,
 		Hove = self.Hive,
 	}
 	self.FarmHelper:init(self)
@@ -95,8 +95,10 @@ function FarmingManager:createUI()
 			shared.main.autoDigEnabled = value
             if not value then return end
             while shared.main.autoDigEnabled do
-                local Event = game:GetService("ReplicatedStorage").Events.ToolCollect
-                Event:FireServer()
+				if shared.main.Pollen.Value < shared.main.Capacity.Value then
+					local Event = game:GetService("ReplicatedStorage").Events.ToolCollect
+					Event:FireServer()
+				end
                 task.wait(0.35)
             end
 		end
