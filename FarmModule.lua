@@ -18,7 +18,7 @@ function FarmModule:init(managerRef)
     character:WaitForChild("Humanoid")
     character:WaitForChild("HumanoidRootPart")
     self.character = character
-    self:gotoHive() 
+    self:getUnclaimHive() 
     return self
 end
 
@@ -193,8 +193,23 @@ function FarmModule:convertPollen()
     }))
 end
 
+function FarmModule:getUnclaimHive()
+    local Honeycombs = workspace:FindFirstChild("Honeycombs")
+    for index,hive in pairs(Honeycombs:GetChildren()) do
+        local OwnerObject = hive:FindFirstChild("Owner")
+        if OwnerObject and not OwnerObject.Vaue then
+            local Event = game:GetService("ReplicatedStorage").Events.ClaimHive
+            Event:FireServer(table.unpack({index}))
+            return hive
+        end
+    end
+end
+
 function  FarmModule:gotoHive()
     local Hive = self.manager.Hive
+    if not Hive then
+        Hive = self:getUnclaimHive()
+    end
     local patharrow = Hive and Hive:FindFirstChild("patharrow")
     local Base = patharrow and patharrow:FindFirstChild("Base")
     if not Base then
