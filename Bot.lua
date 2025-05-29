@@ -150,19 +150,27 @@ function Bot:farmAt(Field, onComplete)
 
     local function getRandomPositionInFieldNear(origin)
         local size = Field.Size
+        local margin = 10
         local tries = 10
+
+        local minX = Field.Position.X - size.X/2 + margin
+        local maxX = Field.Position.X + size.X/2 - margin
+        local minZ = Field.Position.Z - size.Z/2 + margin
+        local maxZ = Field.Position.Z + size.Z/2 - margin
+
         for i = 1, tries do
-            local x = math.random(-10, 10)
-            local z = math.random(-10, 10)
-            local candidate = origin + Vector3.new(x, 0, z)
-            local minX, maxX = Field.Position.X - size.X/2, Field.Position.X + size.X/2
-            local minZ, maxZ = Field.Position.Z - size.Z/2, Field.Position.Z + size.Z/2
-            if candidate.X >= minX and candidate.X <= maxX and candidate.Z >= minZ and candidate.Z <= maxZ then
-                return Vector3.new(candidate.X, Field.Position.Y + 3, candidate.Z)
-            end
+            local x = math.clamp(origin.X + math.random(-10, 10), minX, maxX)
+            local z = math.clamp(origin.Z + math.random(-10, 10), minZ, maxZ)
+            return Vector3.new(x, Field.Position.Y + 3, z)
         end
-        return origin 
+
+        return Vector3.new(
+            math.clamp(origin.X, minX, maxX),
+            Field.Position.Y + 3,
+            math.clamp(origin.Z, minZ, maxZ)
+        )
     end
+
 
     local function moveNext()
         if not self.farming then return end
