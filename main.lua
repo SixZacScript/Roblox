@@ -53,7 +53,7 @@ function FarmingManager:init()
 		Honey = self.Honey.Value or 0,
 		Hove = self.Hive,
 	}
-	self.botHelper = self.botHelper.new(self.character)
+	self.botHelper = self.botHelper.new(self.character, self)
 
 	self:createUI()
 
@@ -117,7 +117,7 @@ function FarmingManager:createUI()
 		end
 	})
 
-	mainTab:CreateToggle({
+	self.farmToggle = mainTab:CreateToggle({
 		Name = "Start Farming",
 		CurrentValue = false,
 		Callback = function(value)

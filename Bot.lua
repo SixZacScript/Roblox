@@ -3,9 +3,10 @@ local TweenService = game:GetService("TweenService")
 local Bot = {}
 Bot.__index = Bot
 
-function Bot.new(character)
+function Bot.new(character, manageRef)
 	local self = setmetatable({}, Bot)
 	self.character = character
+    self.manageRef = manageRef 
 	self.taskQueue = {}
 	self.isRunning = false
     self.farming = false
@@ -77,7 +78,22 @@ function Bot:walkTo(position, onComplete)
 		if conn then conn:Disconnect() end
 		if onComplete then onComplete() end
 	end)
+
+	local UserInputService = game:GetService("UserInputService")
+	local inputConn
+	inputConn = UserInputService.InputBegan:Connect(function(input, gameProcessed)
+		if not gameProcessed and input.UserInputType == Enum.UserInputType.Keyboard then
+            self.manageRef.farmToggle:setValue(false)
+			print("Player pressed:", input.KeyCode.Name)
+		end
+	end)
+
+	coroutine.wrap(function()
+		task.wait(2)
+		if inputConn then inputConn:Disconnect() end
+	end)()
 end
+
 function  Bot:stopFarming()
     self.farming = false
 end
