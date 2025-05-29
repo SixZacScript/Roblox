@@ -34,8 +34,9 @@ function FarmModule:startFarming()
         while startFarm do
             local Capacity, Pollen = shared.main.Capacity, shared.main.Pollen
             if Pollen >= Capacity and not convertPollen then
+                convertPollen = true
                 self:gotoHive(function()
-                     self:convertPollen()
+                    self:convertPollen()
                     print("Arrived at hive!")
                 end)
             end
@@ -189,24 +190,18 @@ function FarmModule:changeTokenMode(mode)
 end
 
 function FarmModule:convertPollen()
-    if convertPollen then
-        warn("Already converting pollen")
-        return
-    end
-    convertPollen = true
     local Capacity, Pollen = shared.main.Capacity, shared.main.Pollen
     local Event = game:GetService("ReplicatedStorage").Events.PlayerHiveCommand
-    Event:FireServer(table.unpack({
-        "ToggleHoneyMaking"
-    }))
+    Event:FireServer("ToggleHoneyMaking")
+
     repeat
         Capacity, Pollen = shared.main.Capacity, shared.main.Pollen
         task.wait(3)
     until Pollen <= 0
+
     convertPollen = false
-
-
 end
+
 
 function FarmModule:getUnclaimHive()
     local Honeycombs = workspace:FindFirstChild("Honeycombs")
