@@ -42,7 +42,7 @@ function Bot:executeTask(taskData)
 		self:walkTo(taskData.position, taskData.onComplete)
 	elseif taskData.type == "fly" then
 		self:flyTo(taskData.position, taskData.onComplete)
-    elseif taskData.type == "fly" then
+    elseif taskData.type == "start" then
         self:startFarming(taskData.field)
     elseif taskData.type == "stop" then
         self:stopFarming()
