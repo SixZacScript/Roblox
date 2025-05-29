@@ -42,6 +42,9 @@ function FarmModule:startFarming()
     end
 
     startFarm = true
+    convertPollen = false
+    tokenMode = "First"
+    itemToPickup = {}
     self:setupListener()
     self:startGathering()
 end
