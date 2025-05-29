@@ -104,7 +104,6 @@ function Bot:walkTo(position, onComplete)
             local item = self.items[1]
             if item and (not self.currentTarget or (self.currentTarget - item.Position).Magnitude > 1) then
                 print("Go to item")
-                table.remove(self.items, 1)
                 if self.movingConnection then
                     self.movingConnection:Disconnect()
                     self.movingConnection = nil
@@ -113,7 +112,10 @@ function Bot:walkTo(position, onComplete)
                     self.heartbeatConnection:Disconnect()
                     self.heartbeatConnection = nil
                 end
-                self:walkTo(item.Position, onComplete)
+                self:walkTo(item.Position, function()
+                    table.remove(self.items, 1)
+                    if onComplete then onComplete() end
+                end)
             end
         end
     end)
@@ -144,17 +146,28 @@ function Bot:startFarming(field)
 end
 function Bot:farmAt(Field, onComplete)
     local FieldPosition = Field.Position + Vector3.new(0,3,0)
-    local function getRandomPositionInField()
+    local lastPosition = Field.Position
+
+    local function getRandomPositionInFieldNear(origin)
         local size = Field.Size
-        local origin = Field.Position
-        local x = math.random(-size.X / 2, size.X / 2)
-        local z = math.random(-size.Z / 2, size.Z / 2)
-        return Vector3.new(origin.X + x, origin.Y + 3, origin.Z + z)
+        local tries = 10
+        for i = 1, tries do
+            local x = math.random(-10, 10)
+            local z = math.random(-10, 10)
+            local candidate = origin + Vector3.new(x, 0, z)
+            local minX, maxX = Field.Position.X - size.X/2, Field.Position.X + size.X/2
+            local minZ, maxZ = Field.Position.Z - size.Z/2, Field.Position.Z + size.Z/2
+            if candidate.X >= minX and candidate.X <= maxX and candidate.Z >= minZ and candidate.Z <= maxZ then
+                return Vector3.new(candidate.X, Field.Position.Y + 3, candidate.Z)
+            end
+        end
+        return origin 
     end
 
     local function moveNext()
         if not self.farming then return end
-        local nextPos = getRandomPositionInField()
+        local nextPos = getRandomPositionInFieldNear(lastPosition)
+        lastPosition = nextPos
         self:walkTo(nextPos, function()
             moveNext()
         end)
@@ -164,9 +177,9 @@ function Bot:farmAt(Field, onComplete)
         type = "fly",
         position = FieldPosition,
         onComplete = function()
+            lastPosition = FieldPosition
             moveNext()
         end
     })
 end
-
 return Bot
