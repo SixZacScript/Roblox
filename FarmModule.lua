@@ -10,16 +10,16 @@ local startFarm = false
 local convertPollen = false
 local tokenMode = "First"
 local childAddedConn, childRemovedConn
-local manager
 
 function FarmModule:init(managerRef)
-    manager = managerRef
+    self.manager = managerRef
     local LocalPlayer = Players.LocalPlayer
     local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
     character:WaitForChild("Humanoid")
     character:WaitForChild("HumanoidRootPart")
     self.character = character
-    print(manager)
+       self:gotoHive() 
+    return self
 end
 
 function FarmModule:startFarming()
@@ -194,14 +194,14 @@ function FarmModule:convertPollen()
 end
 
 function  FarmModule:gotoHive()
-    local Hive = shared.main.Hive;
-    local patharrow = Hive:FindFirstChild("patharrow")
-    local Base = patharrow:FindFirstChild("Base")
+    local Hive = self.manager.Hive
+    local patharrow = Hive and Hive:FindFirstChild("patharrow")
+    local Base = patharrow and patharrow:FindFirstChild("Base")
     if not Base then
         warn("Base not found in patharrow")
         return
     end
-
+    print("Moving to Hive Base")
     
 end
 return FarmModule
