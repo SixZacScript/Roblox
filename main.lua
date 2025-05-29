@@ -53,7 +53,6 @@ end
 
 function FarmingManager:createUI()
 	local mainTab = Window:CreateTab("Main", "flower")
-	local statsTab = Window:CreateTab("Stats", "bar-chart")
 	local movementTab = Window:CreateTab("Movement", "dumbbell")
 
 	mainTab:CreateSection("Farming Zones")
@@ -108,6 +107,8 @@ function FarmingManager:createUI()
 			FarmHelper:changeTokenMode(newMode)
 		end
 	})
+	mainTab:CreateSection("Tokens Zones")
+
 	PlayerMovement:start(movementTab)
 end
 
