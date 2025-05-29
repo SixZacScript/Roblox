@@ -30,26 +30,15 @@ function FarmModule:startFarming()
 
     startFarm = true
     self:setupListener()
-    task.spawn(function()
-        while startFarm do
-            local Capacity, Pollen = shared.main.Capacity, shared.main.Pollen
-            if Pollen >= Capacity and not convertPollen then
-                convertPollen = true
-                self:gotoHive(function()
-                    print("Converting pollen to honey...")
-                    self:convertPollen()
-                    
-                end)
-            end
-            task.wait(0.1)
-        end
+    self:startGathering()
+end
+
+function FarmModule:startGathering()
+    self:gotoField(function()
+        print("Starting farming in field:", shared.main.currentField.Name)
     end)
     task.spawn(function()
-        while startFarm do
-             if convertPollen then
-                task.wait(0.1)
-                continue
-            end
+        while startFarm and not convertPollen do
             while #itemToPickup > 0 do
                 local item = self:getNextItem()
                 if item and item:IsDescendantOf(CollectiblesFolder) and self:isInField(item.Position) then
@@ -139,20 +128,6 @@ function FarmModule:moveTo(position, item)
     end
 end
 
-function FarmModule:setupListener()
-    childAddedConn = CollectiblesFolder.ChildAdded:Connect(function(item)
-        table.insert(itemToPickup, item)
-    end)
-
-    childRemovedConn = CollectiblesFolder.ChildRemoved:Connect(function(item)
-        for i, v in ipairs(itemToPickup) do
-            if v == item then
-                table.remove(itemToPickup, i)
-                break
-            end
-        end
-    end)
-end
 
 function FarmModule:getRandomPosinField()
     local character = self.character
@@ -197,10 +172,11 @@ function FarmModule:convertPollen()
 
     repeat
         Capacity, Pollen = shared.main.Capacity, shared.main.Pollen
-        task.wait(3)
+        task.wait(5)
     until Pollen <= 0
 
     convertPollen = false
+    self:startGathering()
 end
 
 
@@ -217,7 +193,22 @@ function FarmModule:getUnclaimHive()
         end
     end
 end
+function  FarmModule:gotoField(onComplete)
+    local currentField = shared.main.currentField
+    if not currentField then
+        warn("Current field is not set")
+        return
+    end
+    local distance = (currentField.Position - self.manager.character.PrimaryPart.Position).Magnitude
+    if distance <= 30 then
+        if onComplete then onComplete() end
+        return
+    end
 
+    local tween = self.manager.TweenHelper:tweenTo(currentField.Position, self.manager.character)
+    if tween and onComplete then onComplete() end
+    return tween
+end
 function FarmModule:gotoHive(onComplete)
     local Hive = self.manager.Hive
     local patharrow = Hive and Hive:FindFirstChild("patharrow")
@@ -231,31 +222,33 @@ function FarmModule:gotoHive(onComplete)
     if tween and onComplete then onComplete() end
     return tween
 end
-function FarmModule:checkingStatus()
-    local Capacity, Pollen = shared.main.Capacity, shared.main.Pollen
-    local isFull = Pollen >= Capacity
-    if isFull and not convertPollen then
-        convertPollen = true
-        self:gotoHive(function()
-            print("Converting pollen to honey...")
-            self:convertPollen()
-            
-        end)
-    elseif not isFull and convertPollen then
-        convertPollen = false
-    elseif not isFull and not convertPollen then
-        local field = self.flowerZones:FindFirstChild(self.selectedZone)
-        local distance = (self.character.PrimaryPart.Position - field.Position).Magnitude
-        if distance > 30 then
-            local success = self.TweenHelper:tweenTo(field.Position, self.character)
-            if not success then
-                warn("Failed to tween to field position")
-            end
-        else
-            local randomPos = self:getRandomPosinField()
-            self:moveTo(randomPos, nil)
-        end
-    end
 
+function FarmModule:setupListener()
+    childAddedConn = CollectiblesFolder.ChildAdded:Connect(function(item)
+        table.insert(itemToPickup, item)
+    end)
+
+    childRemovedConn = CollectiblesFolder.ChildRemoved:Connect(function(item)
+        for i, v in ipairs(itemToPickup) do
+            if v == item then
+                table.remove(itemToPickup, i)
+                break
+            end
+        end
+    end)
+    task.spawn(function()
+        while startFarm do
+            local Capacity, Pollen = shared.main.Capacity, shared.main.Pollen
+            if Pollen >= Capacity and not convertPollen then
+                convertPollen = true
+                self:gotoHive(function()
+                    print("Converting pollen to honey...")
+                    self:convertPollen()
+                    
+                end)
+            end
+            task.wait(0.1)
+        end
+    end)
 end
 return FarmModule
