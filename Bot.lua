@@ -34,6 +34,7 @@ function Bot:runTasks()
 end
 
 function Bot:executeTask(taskData)
+    print("Executing task:", taskData.type)
 	if taskData.type == "move" then
 		self:moveTo(taskData.position, taskData.onComplete)
 	elseif taskData.type == "farm" then
