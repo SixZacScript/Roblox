@@ -85,7 +85,7 @@ function Bot:executeTask(taskData)
 	if taskData.type == "walk" then
 		self:walkTo(taskData.position, taskData.onComplete)
 	elseif taskData.type == "farm" then
-		self:farmAt(taskData.field, taskData.onComplete)
+		self:farmAt(taskData.onComplete)
 	elseif taskData.type == "fly" then
 		self:flyTo(taskData.position, taskData.onComplete)
     elseif taskData.type == "start" then
@@ -144,7 +144,8 @@ function  Bot:stopFarming()
     self:initVariable()
     self:clearConnection()
 end
-function Bot:startFarming(field)
+function Bot:startFarming()
+    local field = shared.main.currentField
     if self.farming and self.currentField == field then return end
 
     self:stopFarming()
@@ -154,10 +155,12 @@ function Bot:startFarming(field)
     self:addTask({type = "farm", field = field})
 end
 
-function Bot:farmAt(Field, onComplete)
+function Bot:farmAt(onComplete)
+    local Field = shared.main.currentField
     local FieldPosition = Field.Position + Vector3.new(0,3,0)
 
     local function getRandomPositionInField()
+        local Field = shared.main.currentField
         local size = Field.Size
         local margin = 15
         local minX = Field.Position.X - size.X/2 + margin

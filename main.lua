@@ -99,7 +99,7 @@ function FarmingManager:createUI()
 			shared.main.currentField = self.flowerZones:FindFirstChild(self.selectedZone)
 			if shared.main.startFarming then
 				self.botHelper:stopFarming()
-				self.botHelper:startFarming(shared.main.currentField)
+				self.botHelper:startFarming()
 			end
 		end
 	})
