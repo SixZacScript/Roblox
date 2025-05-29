@@ -14,7 +14,6 @@ function Bot.new(character)
 end
 
 function Bot:addTask(task)
-    print("Adding task:", task.type)
 	table.insert(self.taskQueue, task)
 	if not self.isRunning then
 		self:runTasks()
@@ -23,6 +22,8 @@ end
 
 function Bot:runTasks()
 	self.isRunning = true
+    print("Running tasks for character:", self.character.Name)
+    print("Total tasks in queue:", #self.taskQueue)
 	task.spawn(function()
 		while #self.taskQueue > 0 do
 			local taskData = table.remove(self.taskQueue, 1)
