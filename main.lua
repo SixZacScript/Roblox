@@ -127,7 +127,7 @@ function FarmingManager:createUI()
 				return
 			end
 			shared.main.startFarming = true
-			self.botHelper:addTask({type = "farm", field = shared.main.currentField})
+			self.botHelper:addTask({type = "start", field = shared.main.currentField})
 		end
 	})
 	mainTab:CreateDropdown({

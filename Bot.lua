@@ -9,11 +9,12 @@ function Bot.new(character)
 	self.character = character
 	self.taskQueue = {}
 	self.isRunning = false
+    self.farming = false
 	return self
 end
 
 function Bot:addTask(task)
-    print("Adding task:", task.type, "for character:", self.character.Name)
+    print("Adding task:", task.type)
 	table.insert(self.taskQueue, task)
 	if not self.isRunning then
 		self:runTasks()
@@ -41,8 +42,11 @@ function Bot:executeTask(taskData)
 		self:walkTo(taskData.position, taskData.onComplete)
 	elseif taskData.type == "fly" then
 		self:flyTo(taskData.position, taskData.onComplete)
+    elseif taskData.type == "fly" then
+        self:startFarming(taskData.field)
     elseif taskData.type == "stop" then
-        print("Stopping farming for character:", self.character.Name)
+        self:stopFarming()
+
 	end
 end
 
@@ -75,13 +79,23 @@ function Bot:walkTo(position, onComplete)
 		if onComplete then onComplete() end
 	end)
 end
+function  Bot:stopFarming()
+    self.farming = false
+end
+function Bot:startFarming(field)
+    if self.farming then return end
+    self.farming = true
+    self.currentField = field
+    self:addTask({type = "farm",field = field})
 
+end
 function Bot:farmAt(Field, onComplete)
+
+    self:flyTo(Field.Position, function()
+        
+    end)
 	print("Farming at", Field.Name)
-	-- Simulate farming with delay
-	task.delay(2, function()
-		if onComplete then onComplete() end
-	end)
+
 end
 
 return Bot
