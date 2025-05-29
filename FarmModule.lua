@@ -13,14 +13,27 @@ local childAddedConn, childRemovedConn
 
 function FarmModule:init(managerRef)
     self.manager = managerRef
-    local LocalPlayer = Players.LocalPlayer
-    local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
-    character:WaitForChild("Humanoid")
-    character:WaitForChild("HumanoidRootPart")
-    self.character = character
+    -- local LocalPlayer = Players.LocalPlayer
+    -- local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+    -- character:WaitForChild("Humanoid")
+    -- character:WaitForChild("HumanoidRootPart")
+    -- self.character = character
+
+    -- LocalPlayer.CharacterAdded:Connect(function(char)
+    --     char:WaitForChild("Humanoid")
+    --     char:WaitForChild("HumanoidRootPart")
+    --     self.character = char
+
+    --     if startFarm then
+    --         task.wait(1)
+    --         self:startFarming()
+    --     end
+    -- end)
+
     if not managerRef.Hive then self:getUnclaimHive() end
     return self
 end
+
 
 function FarmModule:startFarming()
     if not shared.main or not shared.main.currentField then
@@ -66,8 +79,9 @@ function FarmModule:startGathering()
 end
 
 function FarmModule:getNextItem()
-    if tokenMode == "Nearest" and self.character then
-        local root = self.character.PrimaryPart
+    local character = self.manager.character
+    if tokenMode == "Nearest" and character then
+        local root = character.PrimaryPart
         local closestItem, shortestDist = nil, math.huge
         for _, item in ipairs(itemToPickup) do
             if item and item:IsDescendantOf(CollectiblesFolder) then
@@ -95,7 +109,7 @@ function FarmModule:stopFarming()
 end
 
 function FarmModule:moveTo(position, item)
-    local char = self.character
+    local char = self.manager.character
     local humanoid = char:FindFirstChild("Humanoid")
     local reached = false
     local successResult = false
@@ -134,7 +148,7 @@ end
 
 
 function FarmModule:getRandomPosinField()
-    local character = self.character
+    local character = self.manager.character
     local rootPart = character.PrimaryPart
     local currentField = shared.main.currentField
     local position = currentField.Position
@@ -167,6 +181,10 @@ end
 
 function FarmModule:changeTokenMode(mode)
     tokenMode = mode
+end
+
+function FarmModule:CharacterAdded(char)
+    self.manager.character = char
 end
 
 function FarmModule:convertPollen()

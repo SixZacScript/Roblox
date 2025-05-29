@@ -54,16 +54,23 @@ function FarmingManager:init()
 	}
 	self.FarmHelper:init(self)
 	self:createUI()
-	self.humanoid.Died:Connect(function()
-		self.FarmHelper:stopFarming()
-		shared.main.startFarming = false
-	end)
+
 	for _, prop in ipairs({"Capacity", "Pollen", "Honey"}) do
 		self[prop]:GetPropertyChangedSignal("Value"):Connect(function()
 			shared.main[prop] = self[prop].Value
 		end)
 	end
-
+    self.localPlayer.CharacterAdded:Connect(function(char)
+        char:WaitForChild("Humanoid")
+        char:WaitForChild("HumanoidRootPart")
+        self.character = char
+		self.FarmHelper:CharacterAdded(char)
+		
+        if shared.main.startFarming then
+            task.wait(3)
+            self:startFarming()
+        end
+    end)
 end
 
 function FarmingManager:updateCharacter()
