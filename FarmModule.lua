@@ -206,8 +206,7 @@ function  FarmModule:gotoField(onComplete)
         return
     end
 
-    local tween = self.manager.TweenHelper:tweenTo(currentField.Position, self.manager.character)
-    if tween and onComplete then onComplete() end
+    local tween = self.manager.TweenHelper:tweenTo(currentField.Position, self.manager.character, onComplete)
     return tween
 end
 function FarmModule:gotoHive(onComplete)
@@ -219,8 +218,7 @@ function FarmModule:gotoHive(onComplete)
         return
     end
 
-    local tween = self.manager.TweenHelper:tweenTo(Base.Position, self.manager.character)
-    if tween and onComplete then onComplete() end
+    local tween = self.manager.TweenHelper:tweenTo(Base.Position, self.manager.character, onComplete)
     return tween
 end
 function  FarmModule:checkingPollen()
@@ -228,8 +226,8 @@ function  FarmModule:checkingPollen()
     if Pollen >= Capacity and not convertPollen then
         convertPollen = true
         self:gotoHive(function()
-            print("Converting pollen to honey...")
             task.wait(1)
+            print("Converting pollen to honey...")
             self:convertPollen()
         end)
     end

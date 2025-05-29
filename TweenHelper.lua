@@ -2,7 +2,7 @@ local TweenService = game:GetService("TweenService")
 
 local TweenHelper = {}
 
-function TweenHelper:tweenTo(targetPosition, character, tweenSpeed)
+function TweenHelper:tweenTo(targetPosition, character ,onComplete, tweenSpeed)
 	if not character or not character:IsDescendantOf(game) then
 		return false -- ensure return value
 	end
@@ -22,25 +22,26 @@ function TweenHelper:tweenTo(targetPosition, character, tweenSpeed)
 		CFrame = newCFrame
 	})
 
-	local cancelled = false
-	local connection
-	connection = character.AncestryChanged:Connect(function(_, parent)
-		if not parent then
-			cancelled = true
-			tween:Cancel()
-			if connection then connection:Disconnect() end
-		end
-	end)
+    local cancelled = false
+    local connection
+    connection = character.AncestryChanged:Connect(function(_, parent)
+        if not parent then
+            cancelled = true
+            tween:Cancel()
+            if connection then connection:Disconnect() end
+        end
+    end)
 
-	tween:Play()
-	tween.Completed:Wait()
+    tween.Completed:Connect(function()
+        if connection then connection:Disconnect() end
+        if character:IsDescendantOf(game) and rootPart then
+            rootPart.Anchored = false
+        end
+        if onComplete then onComplete(not cancelled) end
+    end)
 
-	if connection then connection:Disconnect() end
-	if character:IsDescendantOf(game) and rootPart then
-		rootPart.Anchored = false
-	end
-
-	return not cancelled
+    tween:Play()
+    return true
 end
 
 
