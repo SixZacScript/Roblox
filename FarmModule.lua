@@ -201,7 +201,7 @@ function  FarmModule:gotoHive()
         warn("Base not found in patharrow")
         return
     end
-   	local success = self.manager.TweenHelper:tweenTo(Base.Position, self.character)
+   	local success = self.manager.TweenHelper:tweenTo(Base.Position, self.manager.character)
     
 end
 return FarmModule
