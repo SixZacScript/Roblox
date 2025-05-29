@@ -29,6 +29,7 @@ function FarmModule:startFarming()
 
     task.spawn(function()
         while startFarm do
+            print(shared.main.Pollen, shared.main.Capacity, shared.main.Honey)
             while #itemToPickup > 0 do
                 local item = self:getNextItem()
                 if item and item:IsDescendantOf(CollectiblesFolder) and self:isInField(item.Position) then

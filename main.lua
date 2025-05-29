@@ -7,6 +7,7 @@ local Window = loadstring(game:HttpGet('https://raw.githubusercontent.com/SixZac
 local TweenHelper = loadstring(game:HttpGet('https://raw.githubusercontent.com/SixZacScript/Roblox/refs/heads/main/TweenHelper.lua'))()
 local FarmHelper = loadstring(game:HttpGet('https://raw.githubusercontent.com/SixZacScript/Roblox/refs/heads/main/FarmModule.lua'))()
 local PlayerMovement = loadstring(game:HttpGet("https://raw.githubusercontent.com/SixZacScript/Roblox/refs/heads/main/PlayerMovement.lua"))()
+local TokenData = loadstring(game:HttpGet("https://raw.githubusercontent.com/SixZacScript/Roblox/refs/heads/main/TokenData.lua"))()
 
 -- FarmingManager Class
 local FarmingManager = {}
@@ -14,12 +15,19 @@ FarmingManager.__index = FarmingManager
 
 function FarmingManager.new()
 	local self = setmetatable({}, FarmingManager)
+	-- Initialize services and properties
 	self.localPlayer = Players.LocalPlayer
+	self.CoreStats = self.localPlayer:WaitForChild("CoreStats")
 	self.character = self.localPlayer.Character or self.localPlayer.CharacterAdded:Wait()
 	self.humanoid = self.character:WaitForChild("Humanoid")
 	self.rootPart = self.character:WaitForChild("HumanoidRootPart")
 	self.flowerZones = Workspace:WaitForChild("FlowerZones")
 	self.collectibles = Workspace:WaitForChild("Collectibles")
+	-- Initialize CoreStats
+	self.Pollen = self.CoreStats:WaitForChild("Pollen")
+	self.Honey = self.CoreStats:WaitForChild("Honey")
+	self.Capacity = self.CoreStats:WaitForChild("Capacity")
+	-- Initialize other properties
 	self.zoneNames = {}
 	self.selectedZone = "Dandelion Field"
 	self:init()
@@ -35,7 +43,9 @@ function FarmingManager:init()
 		currentField = self.flowerZones:FindFirstChild(self.selectedZone),
 		startFarming = true,
 		autoDigEnabled = true,
-		tokenMode = 'First'
+		tokenMode = 'First',
+		Pollen = 0,
+		Honey = 0,
 	}
 	FarmHelper:init()
 	self:createUI()
@@ -43,6 +53,12 @@ function FarmingManager:init()
 		FarmHelper:stopFarming()
 		shared.main.startFarming = false
 	end)
+	for _, prop in ipairs({"Capacity", "Pollen", "Honey"}) do
+		self[prop]:GetPropertyChangedSignal("Value"):Connect(function()
+			shared.main[prop] = self[prop].Value
+		end)
+	end
+
 end
 
 function FarmingManager:updateCharacter()
@@ -107,7 +123,21 @@ function FarmingManager:createUI()
 			FarmHelper:changeTokenMode(newMode)
 		end
 	})
-	mainTab:CreateSection("Tokens Zones")
+	mainTab:CreateSection("Collect Only Token")
+	shared.tokenToggles = {}
+
+	for name, assetID in pairs(TokenData) do
+		local toggle = mainTab:CreateToggle({
+			Name = name,
+			Flag = tostring(assetID),
+			CurrentValue = false,
+			Callback = function(value)
+				shared.main[assetID] = value
+				print(name .. " toggled:", value)
+			end
+		})
+		shared.tokenToggles[assetID] = toggle
+	end
 
 	PlayerMovement:start(movementTab)
 end
