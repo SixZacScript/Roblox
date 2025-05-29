@@ -7,15 +7,19 @@ FarmModule.__index = FarmModule
 
 local itemToPickup = {}
 local startFarm = false
+local convertPollen = false
 local tokenMode = "First"
 local childAddedConn, childRemovedConn
+local manager
 
-function FarmModule:init()
+function FarmModule:init(managerRef)
+    manager = managerRef
     local LocalPlayer = Players.LocalPlayer
     local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
     character:WaitForChild("Humanoid")
     character:WaitForChild("HumanoidRootPart")
     self.character = character
+    print(manager)
 end
 
 function FarmModule:startFarming()
@@ -26,10 +30,22 @@ function FarmModule:startFarming()
 
     startFarm = true
     self:setupListener()
-
     task.spawn(function()
         while startFarm do
-            print(shared.main.Pollen, shared.main.Capacity, shared.main.Honey)
+            local Capacity, Pollen = shared.main.Capacity, shared.main.Pollen
+            if Pollen >= Capacity and not convertPollen then
+                convertPollen = true
+                self:convertPollen()
+            end
+            task.wait(0.1)
+        end
+    end)
+    task.spawn(function()
+        while startFarm do
+             if convertPollen then
+                task.wait(0.1)
+                continue
+            end
             while #itemToPickup > 0 do
                 local item = self:getNextItem()
                 if item and item:IsDescendantOf(CollectiblesFolder) and self:isInField(item.Position) then
@@ -45,8 +61,10 @@ function FarmModule:startFarming()
                 task.wait()
             end
 
-            local randomPos = self:getRandomPosinField()
-            self:moveTo(randomPos, nil)
+            if not convertPollen then
+                local randomPos = self:getRandomPosinField()
+                self:moveTo(randomPos, nil)
+            end
             task.wait()
         end
     end)
@@ -168,4 +186,22 @@ function FarmModule:changeTokenMode(mode)
     tokenMode = mode
 end
 
+function FarmModule:convertPollen()
+    local Event = game:GetService("ReplicatedStorage").Events.PlayerHiveCommand
+    Event:FireServer(table.unpack({
+        "ToggleHoneyMaking"
+    }))
+end
+
+function  FarmModule:gotoHive()
+    local Hive = shared.main.Hive;
+    local patharrow = Hive:FindFirstChild("patharrow")
+    local Base = patharrow:FindFirstChild("Base")
+    if not Base then
+        warn("Base not found in patharrow")
+        return
+    end
+
+    
+end
 return FarmModule
