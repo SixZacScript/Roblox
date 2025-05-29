@@ -13,8 +13,11 @@ function Bot.new(character, manageRef)
     self:initVariable()
 
     CollectiblesFolder.ChildAdded:Connect(function(item)
-        if item:IsA("BasePart") then
-            table.insert(self.items, item)
+        if item:IsA("BasePart") and self.character and self.character:FindFirstChild("HumanoidRootPart") then
+            local rootPart = self.character.HumanoidRootPart
+            if (rootPart.Position - item.Position).Magnitude <= 30 then
+                table.insert(self.items, item)
+            end
         end
     end)
     CollectiblesFolder.ChildRemoved:Connect(function(item)
@@ -172,7 +175,7 @@ function Bot:farmAt(Field, onComplete)
 
     local function getRandomPositionInFieldNear(origin)
         local size = Field.Size
-        local margin = 10
+        local margin = 15
         local tries = 10
 
         local minX = Field.Position.X - size.X/2 + margin
@@ -181,8 +184,8 @@ function Bot:farmAt(Field, onComplete)
         local maxZ = Field.Position.Z + size.Z/2 - margin
 
         for i = 1, tries do
-            local x = math.clamp(origin.X + math.random(-10, 10), minX, maxX)
-            local z = math.clamp(origin.Z + math.random(-10, 10), minZ, maxZ)
+            local x = math.clamp(origin.X + math.random(-20, 20), minX, maxX)
+            local z = math.clamp(origin.Z + math.random(-20, 20), minZ, maxZ)
             return Vector3.new(x, Field.Position.Y + 3, z)
         end
 
