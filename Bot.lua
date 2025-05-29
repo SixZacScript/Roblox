@@ -162,45 +162,35 @@ function  Bot:stopFarming()
     end
 end
 function Bot:startFarming(field)
-    if self.farming then return end
+    if self.farming and self.currentField == field then return end
+
+    self:stopFarming()
     self.farming = true
     self.currentField = field
     print("Starting farming at field:", field.Name)
-    self:addTask({type = "farm",field = field})
-
+    self:addTask({type = "farm", field = field})
 end
+
 function Bot:farmAt(Field, onComplete)
     local FieldPosition = Field.Position + Vector3.new(0,3,0)
-    local lastPosition = Field.Position
 
-    local function getRandomPositionInFieldNear(origin)
+    local function getRandomPositionInField()
         local size = Field.Size
         local margin = 15
-        local tries = 10
-
         local minX = Field.Position.X - size.X/2 + margin
         local maxX = Field.Position.X + size.X/2 - margin
         local minZ = Field.Position.Z - size.Z/2 + margin
         local maxZ = Field.Position.Z + size.Z/2 - margin
 
-        for i = 1, tries do
-            local x = math.clamp(origin.X + math.random(-20, 20), minX, maxX)
-            local z = math.clamp(origin.Z + math.random(-20, 20), minZ, maxZ)
-            return Vector3.new(x, Field.Position.Y + 3, z)
-        end
+        local x = math.random(minX, maxX)
+        local z = math.random(minZ, maxZ)
 
-        return Vector3.new(
-            math.clamp(origin.X, minX, maxX),
-            Field.Position.Y + 3,
-            math.clamp(origin.Z, minZ, maxZ)
-        )
+        return Vector3.new(x, Field.Position.Y + 3, z)
     end
-
 
     local function moveNext()
         if not self.farming then return end
-        local nextPos = getRandomPositionInFieldNear(lastPosition)
-        lastPosition = nextPos
+        local nextPos = getRandomPositionInField()
         self:walkTo(nextPos, function()
             moveNext()
         end)
@@ -210,7 +200,6 @@ function Bot:farmAt(Field, onComplete)
         type = "fly",
         position = FieldPosition,
         onComplete = function()
-            lastPosition = FieldPosition
             moveNext()
         end
     })
