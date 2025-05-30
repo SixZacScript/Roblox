@@ -17,9 +17,9 @@ function FarmingManager.new()
 	self.PlayerMovement = loadstring(game:HttpGet("https://raw.githubusercontent.com/SixZacScript/Roblox/refs/heads/main/PlayerMovement.lua"))()
 	self.TokenData = loadstring(game:HttpGet("https://raw.githubusercontent.com/SixZacScript/Roblox/refs/heads/main/TokenData.lua"))()
 	-- self.Window = loadstring(readfile("BeeSwarm/Window.lua"))()
-	self.botHelper = loadstring(readfile("BeeSwarm/Bot.lua"))()
-    self.PlayerMovement = loadstring(readfile("BeeSwarm/PlayerMovement.lua"))()
-    self.TokenData = loadstring(readfile("BeeSwarm/TokenData.lua"))()
+	-- self.botHelper = loadstring(readfile("BeeSwarm/Bot.lua"))()
+    -- self.PlayerMovement = loadstring(readfile("BeeSwarm/PlayerMovement.lua"))()
+    -- self.TokenData = loadstring(readfile("BeeSwarm/TokenData.lua"))()
     -- self.hiveHelper = loadstring(readfile("BeeSwarm/Hive.lua"))()
 
 	-- Initialize services and properties
