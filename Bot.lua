@@ -248,30 +248,22 @@ function Bot:farmAt()
             and pos.Z >= Field.Position.Z - size.Z/2 and pos.Z <= Field.Position.Z + size.Z/2
     end
 
-    local function getCircularPoints(minRadius)
-        local points = {}
+    local function getRandomPositionInField(maxRadius)
         local center = Vector3.new(Field.Position.X, Field.Position.Y + 3, Field.Position.Z)
-        local maxRadius = math.min(Field.Size.X, Field.Size.Z) / 2 - 5 -- padding
-        local stepAngle = math.rad(15) -- adjust for resolution
-        local currentRadius = minRadius or 5
+        local radius = math.random() * maxRadius
+        local angle = math.random() * math.pi * 2
 
-        while currentRadius <= maxRadius do
-            local angle = 0
-            while angle < math.pi * 2 do
-                local x = center.X + math.cos(angle) * currentRadius
-                local z = center.Z + math.sin(angle) * currentRadius
-                table.insert(points, Vector3.new(x, center.Y, z))
-                angle = angle + stepAngle
-            end
-            currentRadius = currentRadius + 5
-        end
+        local offsetX = math.cos(angle) * radius
+        local offsetZ = math.sin(angle) * radius
 
-        return points
+        return center + Vector3.new(offsetX, 0, offsetZ)
     end
 
 
+
     local function startPatrolling()
-        local patrolPoints = getCircularPoints(10)
+        local maxRadius = math.min(Field.Size.X, Field.Size.Z) / 2 - 5
+        local patrolPoints = getRandomPositionInField(maxRadius)
         local patrolIndex = 1
         local isMoving = false
         local currentItem = nil
