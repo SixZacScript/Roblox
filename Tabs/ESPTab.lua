@@ -44,7 +44,7 @@ function ESP.new(manageRef)
 
     self.espTab:CreateToggle({
         Name = "Enable ESP",
-        CurrentValue = false,
+        CurrentValue = true,
         Flag = "EnableESP",
         Callback = function(value)
             self.EnableESP = value
@@ -68,7 +68,7 @@ function ESP.new(manageRef)
 
     self.espTab:CreateToggle({
         Name = "Show Distance",
-        CurrentValue = false,
+        CurrentValue = true,
         Flag = "ShowDistance",
         Callback = function(value)
             self.ShowDistance = value
