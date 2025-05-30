@@ -6,23 +6,9 @@ return Rayfield:CreateWindow({
     LoadingTitle = "Rayfield Interface Suite",
     LoadingSubtitle = "by Sirius",
     ConfigurationSaving = {
-        Enabled = false,
+        Enabled = true,
         FolderName = nil,
         FileName = "FlowerZonesConfig"
     },
-    Discord = {
-        Enabled = false,
-        Invite = "noinvitelink",
-        RememberJoins = true
-    },
-    KeySystem = false,
-    KeySettings = {
-        Title = "Example Key System",
-        Subtitle = "Key System",
-        Note = "No method of obtaining the key is provided",
-        FileName = "Key",
-        SaveKey = true,
-        GrabKeyFromSite = false,
-        Key = {"ExampleKey"}
-    }
+
 })
