@@ -17,13 +17,13 @@ local allFields = {
     ["Coconut Field"] = "🥥 Coconut Field",
     ["Pepper Patch"] = "🌶️ Pepper Patch",
 }
-local displayOptions = {}
 
 local function getAllFieldKeys()
     local keys = {}
     for key, _ in pairs(allFields) do
         table.insert(keys, key)
     end
+    table.sort(keys)
     return keys
 end
 
@@ -35,11 +35,15 @@ local function getFieldName(iconLabel)
     end
     return nil
 end
+
+local displayOptions = {}
 for _, key in ipairs(getAllFieldKeys()) do
     table.insert(displayOptions, allFields[key])
 end
+
 local FarmTab = {}
 FarmTab.__index = FarmTab
+
 
 function FarmTab.new(manageRef)
     local self = setmetatable({}, FarmTab)
