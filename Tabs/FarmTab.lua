@@ -47,6 +47,7 @@ FarmTab.__index = FarmTab
 
 function FarmTab.new(manageRef)
     local self = setmetatable({}, FarmTab)
+	self:afk(true)
 	self.mainTab = manageRef.Window:CreateTab("Main", "flower")
     self.mainTab:CreateSection("Farming Zones")
     self.mainTab:CreateDropdown({
@@ -94,19 +95,7 @@ function FarmTab.new(manageRef)
         CurrentValue = true,
         Callback = function(value)
             shared.main.antiAfk = value
-            if value then
-                if self.afkConnection then self.afkConnection:Disconnect() end
-                self.afkConnection = game:GetService("Players").LocalPlayer.Idled:Connect(function()
-                    game:GetService("VirtualUser"):Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
-                    task.wait(1)
-                    game:GetService("VirtualUser"):Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
-                end)
-            else
-                if self.afkConnection then
-                    self.afkConnection:Disconnect()
-                    self.afkConnection = nil
-                end
-            end
+			self:afk(value)
         end
     })
 
@@ -172,5 +161,20 @@ function FarmTab.new(manageRef)
 
     return self
 end
-
+function FarmTab:afk(value)
+	if value then
+		if self.afkConnection then self.afkConnection:Disconnect() end
+		self.afkConnection = game:GetService("Players").LocalPlayer.Idled:Connect(function()
+			game:GetService("VirtualUser"):Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+			task.wait(1)
+			game:GetService("VirtualUser"):Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+		end)
+	else
+		if self.afkConnection then
+			self.afkConnection:Disconnect()
+			self.afkConnection = nil
+		end
+	end
+	
+end
 return FarmTab
