@@ -1,15 +1,14 @@
-local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
+local Movement = {}
+Movement.__index = Movement
 
-local PlayerMovementModule = {
-	currentWalkSpeed = 70,
-	currentJumpPower = 75
-}
+function Movement.new(manageRef)
+    local self = setmetatable({}, Movement)
+    self.mainTab = manageRef.mainTab
+    self.currentWalkSpeed = shared.main.defaultWalkSpeed
+	self.currentJumpPower = shared.main.defaultJumpPower
+    self.MovementTab = manageRef.Window:CreateTab("Movement", "dumbbell")
 
-function PlayerMovementModule:start(mainTab)
-	local movementSection = mainTab:CreateSection("Player Movement")
-
-	mainTab:CreateSlider({
+    self.MovementTab:CreateSlider({
 		Name = "Walk Speed",
 		Range = {16, 100},
 		Increment = 1,
@@ -17,15 +16,13 @@ function PlayerMovementModule:start(mainTab)
 		CurrentValue = self.currentWalkSpeed,
 		Callback = function(value)
 			self.currentWalkSpeed = value
-			local character = LocalPlayer.Character
+			local character = manageRef.character
 			if character and character:FindFirstChild("Humanoid") then
 				character.Humanoid.WalkSpeed = value
 			end
 		end,
-		SectionParent = movementSection
 	})
-
-	mainTab:CreateSlider({
+	self.MovementTab:CreateSlider({
 		Name = "Jump Power",
 		Range = {50, 150},
 		Increment = 1,
@@ -33,15 +30,14 @@ function PlayerMovementModule:start(mainTab)
 		CurrentValue = self.currentJumpPower,
 		Callback = function(value)
 			self.currentJumpPower = value
-			local character = LocalPlayer.Character
+			local character = manageRef.character
 			if character and character:FindFirstChild("Humanoid") then
 				character.Humanoid.JumpPower = value
 			end
 		end,
-		SectionParent = movementSection
 	})
 
-	local function applyMovementStats(character)
+    local function applyMovementStats(character)
 		local humanoid = character:WaitForChild("Humanoid")
 		humanoid.WalkSpeed = self.currentWalkSpeed
 		humanoid.JumpPower = self.currentJumpPower
@@ -53,11 +49,11 @@ function PlayerMovementModule:start(mainTab)
 		end)
 	end
 
-	if LocalPlayer.Character then
-		applyMovementStats(LocalPlayer.Character)
+	if manageRef.character then
+		applyMovementStats(manageRef.character)
 	end
 
-	LocalPlayer.CharacterAdded:Connect(applyMovementStats)
+	manageRef.localPlayer.CharacterAdded:Connect(applyMovementStats)
 end
 
-return PlayerMovementModule
+return Movement

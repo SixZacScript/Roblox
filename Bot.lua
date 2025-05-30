@@ -2,6 +2,7 @@ local TweenService = game:GetService("TweenService")
 local Players = game:GetService("Players")
 local WP  = game:GetService("Workspace")
 local CollectiblesFolder = WP:WaitForChild("Collectibles")
+local MonstersFolder = WP:WaitForChild("Monsters")
 
 local Bot = {}
 Bot.__index = Bot
@@ -13,6 +14,7 @@ function Bot.new(character, manageRef)
 
     self:initVariable()
     self:initItemListener() 
+    self:initMonsterListener()
 
     local player = Players:GetPlayerFromCharacter(character)
     if player then
@@ -29,7 +31,21 @@ function Bot.new(character, manageRef)
 
 	return self
 end
+function Bot:stopFarming()
+    self:cancelCurrentTask()
+    print("Farming stopped.")
+end
 
+function Bot:startFarming()
+    self:initVariable()
+    self:getUnclaimHive()
+    self:cancelCurrentTask()
+    self:checkPollen(function()
+        print(shared.main.Pollen, shared.main.Capacity)
+        print("you are ready to farming...","currenthive:", self.manageRef.Hive.Name)
+        self:farmAt()
+    end)
+end
 function Bot:initVariable()
     self.taskQueue = {}
     self.currentTask = nil
@@ -102,6 +118,33 @@ function Bot:flyTo(position, onComplete)
         end
     end)
 end
+function Bot:initMonsterListener()
+    self.MonsterData = {}
+    MonstersFolder.ChildAdded:Connect(function(monster)
+        self.MonsterData[monster.Name] = monster
+    end)
+    MonstersFolder.ChildRemoved:Connect(function(monster)
+        if self.MonsterData[monster.Name] then
+            self.MonsterData[monster.Name] = nil
+        end
+    end)
+end
+function Bot:checkNearbyMonsters()
+    local root = self.character and self.character:FindFirstChild("HumanoidRootPart")
+    if not root then return end
+
+    for _, monster in pairs(self.MonsterData) do
+        if monster and monster:FindFirstChild("HumanoidRootPart") then
+            local distance = (monster.HumanoidRootPart.Position - root.Position).Magnitude
+            if distance <= 30 then
+                self:cancelCurrentTask()
+                return true
+            end
+        end
+    end
+
+    return false
+end
 
 function Bot:initItemListener()
     self.itemQueue = {}
@@ -115,6 +158,14 @@ function Bot:initItemListener()
         end
         
     end
+    local function sortItemsByDistance()
+        local root = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+        if not root then return end
+        table.sort(self.itemQueue, function(a, b)
+            return (a.Position - root.Position).Magnitude < (b.Position - root.Position).Magnitude
+        end)
+    end
+
     CollectiblesFolder.ChildAdded:Connect(function(item)
         local currentField = shared.main.currentField
         local inField = (item.Position - currentField.Position).Magnitude <= currentField.Size.Magnitude / 2
@@ -125,6 +176,8 @@ function Bot:initItemListener()
             if assetID and not shared.main.tokenList[assetID] then return end
 
             table.insert(self.itemQueue, item)
+            sortItemsByDistance()
+
             local connection
             connection = item.Touched:Connect(function(hit)
                 if hit and hit:IsDescendantOf(LocalPlayer.Character) then
@@ -206,21 +259,7 @@ end
 
 
 
-function Bot:stopFarming()
-    self:cancelCurrentTask()
-    print("Farming stopped.")
-end
 
-function Bot:startFarming()
-    self:initVariable()
-    self:getUnclaimHive()
-    self:cancelCurrentTask()
-    self:checkPollen(function()
-        print(shared.main.Pollen, shared.main.Capacity)
-        print("you are ready to farming...","currenthive:", self.manageRef.Hive.Name)
-        self:farmAt()
-    end)
-end
 function Bot:farmAt()
     local Field = shared.main.currentField
     local FieldPosition = Field.Position + Vector3.new(0, 3, 0)
@@ -284,7 +323,11 @@ function Bot:farmAt()
         self:addTask({
             type = "fly",
             position = FieldPosition,
-            onComplete = startPatrolling
+            onComplete = function()
+                task.wait(1)
+
+                startPatrolling()
+            end
         })
     else
         startPatrolling()
