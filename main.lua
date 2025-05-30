@@ -24,14 +24,6 @@ function FarmingManager.new()
 	self.TokenData   = loader("TokenData.lua")
 
 
-
-
-
-
-	-- helpers
-	self.botHelper = loadstring(readfile("BeeSwarm/Bot.lua"))()
-    self.TokenData = loadstring(readfile("BeeSwarm/TokenData.lua"))()
-
 	-- Initialize services and properties
 	self.localPlayer = Players.LocalPlayer
 	self.CoreStats = self.localPlayer:WaitForChild("CoreStats")

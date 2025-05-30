@@ -232,15 +232,10 @@ function Bot:walkTo(position, onComplete, onMove)
     end)
 end
 
-
-
-
-
-
-
 function Bot:farmAt()
     local Field = shared.main.currentField
     local FieldPosition = Field.Position + Vector3.new(0, 3, 0)
+
     local function isInField(root)
         if not root then return false end
         local pos, size = root.Position, Field.Size
@@ -248,23 +243,43 @@ function Bot:farmAt()
             and pos.Z >= Field.Position.Z - size.Z/2 and pos.Z <= Field.Position.Z + size.Z/2
     end
 
-    local function getRandomPositionInField()
-        local halfSizeX, halfSizeZ = Field.Size.X/2, Field.Size.Z/2
-        local randomX = Field.Position.X + math.random(-halfSizeX + 5, halfSizeX - 5)
-        local randomZ = Field.Position.Z + math.random(-halfSizeZ + 5, halfSizeZ - 5)
-        return Vector3.new(randomX, Field.Position.Y + 3, randomZ)
+    local function getCircularPoints()
+        local points = {}
+        local center = Vector3.new(Field.Position.X, Field.Position.Y + 3, Field.Position.Z)
+        local maxRadius = math.min(Field.Size.X, Field.Size.Z) / 2 - 5 -- padding
+        local stepAngle = math.rad(15) -- adjust for resolution
+        local currentRadius = 5
+
+        while currentRadius <= maxRadius do
+            local angle = 0
+            while angle < math.pi * 2 do
+                local x = center.X + math.cos(angle) * currentRadius
+                local z = center.Z + math.sin(angle) * currentRadius
+                table.insert(points, Vector3.new(x, center.Y, z))
+                angle = angle + stepAngle
+            end
+            currentRadius = currentRadius + 5
+        end
+
+        return points
     end
 
     local function startPatrolling()
+        local patrolPoints = getCircularPoints()
+        local patrolIndex = 1
         local isMoving = false
         local currentItem = nil
         local root = self.character and self.character:FindFirstChild("HumanoidRootPart")
+
         while shared.main.autoFarm and not shared.main.convertPollen do
-            if not isMoving then
+            if not isMoving and #patrolPoints > 0 then
                 isMoving = true
+                local targetPos = patrolPoints[patrolIndex]
+                patrolIndex = patrolIndex % #patrolPoints + 1
+
                 self:addTask({
                     type = "walk",
-                    position = getRandomPositionInField(),
+                    position = targetPos,
                     onComplete = function()
                         isMoving = false
                         if Field ~= shared.main.currentField then
@@ -303,7 +318,6 @@ function Bot:farmAt()
             position = FieldPosition,
             onComplete = function()
                 task.wait(1)
-
                 startPatrolling()
             end
         })

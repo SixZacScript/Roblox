@@ -1,3 +1,4 @@
+
 local allFields = {
     ["Sunflower Field"] = "🌻 Sunflower Field",
     ["Clover Field"] = "☘️ Clover Field",
@@ -95,16 +96,55 @@ function FarmTab.new(manageRef)
 
     self.mainTab:CreateSection("Collect Only Token")
 
+ -- ปุ่มล้างทั้งหมด
+    self.mainTab:CreateButton({
+        Name = "Clear All Tokens",
+        Callback = function()
+            for assetID, toggle in pairs(self.tokenToggles) do
+                shared.main.tokenList[assetID] = false
+                toggle:Set(false)
+            end
+            shared.Rayfield:Notify({
+                Title = "Tokens Cleared",
+                Content = "All tokens have been cleared.",
+                Duration = 3
+            })
+        end
+    })
+
+    -- ปุ่ม Toggle ทั้งหมด
+    self.mainTab:CreateButton({
+        Name = "Toggle All Tokens",
+        Callback = function()
+            local anyEnabled = false
+            for _, v in pairs(shared.main.tokenList) do
+                if v then
+                    anyEnabled = true
+                    break
+                end
+            end
+            for assetID, toggle in pairs(self.tokenToggles) do
+                local newValue = not anyEnabled
+                shared.main.tokenList[assetID] = newValue
+                toggle:Set(newValue)
+            end
+            shared.Rayfield:Notify({
+                Title = "Tokens Toggled",
+                Content = anyEnabled and "All tokens turned off." or "All tokens turned on.",
+                Duration = 3
+            })
+        end
+    })
+	
     local sorted = {}
+    self.tokenToggles = {}
 	for name, assetID in pairs(manageRef.TokenData) do
 		table.insert(sorted, {name = name, assetID = assetID})
 	end
-
 	table.sort(sorted, function(a, b) return a.name < b.name end)
-
 	for _, item in ipairs(sorted) do
 		local name, assetID = item.name, item.assetID
-		self.mainTab:CreateToggle({
+		local toggle = self.mainTab:CreateToggle({
 			Name = name,
 			Flag = tostring(assetID),
 			CurrentValue = true,
@@ -112,8 +152,10 @@ function FarmTab.new(manageRef)
 				shared.main.tokenList[assetID] = value
 			end
 		})
-		shared.main.tokenList[assetID] = true
+		self.tokenToggles[assetID] = toggle
 	end
+
+   
 
     return self
 end
