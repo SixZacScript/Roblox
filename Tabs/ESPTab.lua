@@ -80,7 +80,7 @@ function ESP.new(manageRef)
         Range = {0, 1000},
         Increment = 10,
         Suffix = "Studs",
-        CurrentValue = 1000,
+        CurrentValue = self.ESP_Range,
         Flag = "ESPRadius",
         Callback = function(value)
             self.ESP_Range = value

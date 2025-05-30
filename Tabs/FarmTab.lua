@@ -1,4 +1,3 @@
-
 local allFields = {
     ["Sunflower Field"] = "🌻 Sunflower Field",
     ["Clover Field"] = "☘️ Clover Field",
@@ -14,13 +13,13 @@ local allFields = {
     ["Pine Tree Forest"] = "🌳 Pine Tree Forest",
     ["Rose Field"] = "🌹 Rose Field",
     ["Mountain Top Field"] = "⛰️ Mountain Top Field",
-    ["Coconut Field"] = "🥥 Coconut Field",
+    ["Coconut Field"] = "🫕 Coconut Field",
     ["Pepper Patch"] = "🌶️ Pepper Patch",
 }
 
 local orderedFieldKeys = {
-    "Sunflower Field", "Clover Field", "Dandelion Field", "Blue Flower Field",
-    "Mushroom Field", "Spider Field", "Strawberry Field", "Bamboo Field",
+    "Sunflower Field", "Dandelion Field","Clover Field","Mushroom Field",
+    "Blue Flower Field", "Spider Field", "Strawberry Field", "Bamboo Field",
     "Pineapple Patch", "Pumpkin Patch", "Cactus Field", "Pine Tree Forest",
     "Rose Field", "Mountain Top Field", "Coconut Field", "Pepper Patch"
 }
@@ -46,7 +45,6 @@ end
 local FarmTab = {}
 FarmTab.__index = FarmTab
 
-
 function FarmTab.new(manageRef)
     local self = setmetatable({}, FarmTab)
 	self.mainTab = manageRef.Window:CreateTab("Main", "flower")
@@ -63,6 +61,7 @@ function FarmTab.new(manageRef)
 			end
 		end
 	})
+
     self.mainTab:CreateToggle({
 		Name = "Auto Dig",
 		CurrentValue = false,
@@ -90,19 +89,29 @@ function FarmTab.new(manageRef)
         end
     })
 
-	-- self.mainTab:CreateDropdown({
-	-- 	Name = "Token Mode",
-	-- 	Options = {"First", 'Nearest'},
-	-- 	CurrentOption = 'First',
-	-- 	Callback = function(mode)
-	-- 		local newMode = typeof(mode) == "table" and mode[1] or mode
-    --         shared.main.tokenMode = newMode
-	-- 	end
-	-- })
+    self.mainTab:CreateToggle({
+        Name = "Anti-AFK",
+        CurrentValue = true,
+        Callback = function(value)
+            shared.main.antiAfk = value
+            if value then
+                if self.afkConnection then self.afkConnection:Disconnect() end
+                self.afkConnection = game:GetService("Players").LocalPlayer.Idled:Connect(function()
+                    game:GetService("VirtualUser"):Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+                    task.wait(1)
+                    game:GetService("VirtualUser"):Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+                end)
+            else
+                if self.afkConnection then
+                    self.afkConnection:Disconnect()
+                    self.afkConnection = nil
+                end
+            end
+        end
+    })
 
     self.mainTab:CreateSection("Collect Only Token")
 
- -- ปุ่มล้างทั้งหมด
     self.mainTab:CreateButton({
         Name = "Clear All Tokens",
         Callback = function()
@@ -118,7 +127,6 @@ function FarmTab.new(manageRef)
         end
     })
 
-    -- ปุ่ม Toggle ทั้งหมด
     self.mainTab:CreateButton({
         Name = "Toggle All Tokens",
         Callback = function()
@@ -141,7 +149,7 @@ function FarmTab.new(manageRef)
             })
         end
     })
-	
+
     local sorted = {}
     self.tokenToggles = {}
 	for name, assetID in pairs(manageRef.TokenData) do
@@ -159,12 +167,10 @@ function FarmTab.new(manageRef)
 			end
 		})
 		self.tokenToggles[assetID] = toggle
+		shared.main.tokenList[assetID] = true
 	end
-
-   
 
     return self
 end
-
 
 return FarmTab
