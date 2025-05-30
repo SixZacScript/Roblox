@@ -2,7 +2,6 @@ local TweenService = game:GetService("TweenService")
 local Players = game:GetService("Players")
 local WP  = game:GetService("Workspace")
 local CollectiblesFolder = WP:WaitForChild("Collectibles")
-local MonstersFolder = WP:WaitForChild("Monsters")
 
 local Bot = {}
 Bot.__index = Bot
@@ -14,7 +13,6 @@ function Bot.new(character, manageRef)
 
     self:initVariable()
     self:initItemListener() 
-    self:initMonsterListener()
 
     local player = Players:GetPlayerFromCharacter(character)
     if player then
@@ -47,7 +45,6 @@ function Bot:startFarming()
     end)
 end
 function Bot:initVariable()
-    self.taskQueue = {}
     self.currentTask = nil
 	self.isRunning = false
     shared.main.convertPollen = false
@@ -62,7 +59,6 @@ function Bot:addTask(task)
 end
 
 function Bot:cancelCurrentTask()
-    self.taskQueue = {}
     self.currentTask = nil
     self.isRunning = false
     self:walkTo(self.character.PrimaryPart.Position)
@@ -118,33 +114,8 @@ function Bot:flyTo(position, onComplete)
         end
     end)
 end
-function Bot:initMonsterListener()
-    self.MonsterData = {}
-    MonstersFolder.ChildAdded:Connect(function(monster)
-        self.MonsterData[monster.Name] = monster
-    end)
-    MonstersFolder.ChildRemoved:Connect(function(monster)
-        if self.MonsterData[monster.Name] then
-            self.MonsterData[monster.Name] = nil
-        end
-    end)
-end
-function Bot:checkNearbyMonsters()
-    local root = self.character and self.character:FindFirstChild("HumanoidRootPart")
-    if not root then return end
 
-    for _, monster in pairs(self.MonsterData) do
-        if monster and monster:FindFirstChild("HumanoidRootPart") then
-            local distance = (monster.HumanoidRootPart.Position - root.Position).Magnitude
-            if distance <= 30 then
-                self:cancelCurrentTask()
-                return true
-            end
-        end
-    end
 
-    return false
-end
 
 function Bot:initItemListener()
     self.itemQueue = {}
@@ -161,8 +132,15 @@ function Bot:initItemListener()
     local function sortItemsByDistance()
         local root = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
         if not root then return end
+        
+        -- Pre-calculate distances
+        local distances = {}
+        for i, item in ipairs(self.itemQueue) do
+            distances[item] = (item.Position - root.Position).Magnitude
+        end
+        
         table.sort(self.itemQueue, function(a, b)
-            return (a.Position - root.Position).Magnitude < (b.Position - root.Position).Magnitude
+            return distances[a] < distances[b]
         end)
     end
 

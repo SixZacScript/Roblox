@@ -25,10 +25,10 @@ ESP.TrackedObjects = {}
 ESP.ESP_Lines = {}
 ESP.DistanceLabels = {}
 ESP.EnableESP = false
-ESP.AllFolders = {}
-ESP.ShowLines = true
-ESP.ESP_Range = 500
 ESP.ShowDistance = false
+ESP.ShowLines = false
+ESP.AllFolders = {}
+ESP.ESP_Range = 500
 
 function ESP.new(manageRef)
     local self = setmetatable({}, {__index = ESP})
@@ -36,9 +36,9 @@ function ESP.new(manageRef)
     self.ESP_Lines = {}
     self.DistanceLabels = {}
     self.EnableESP = false
-    self.ShowLines = true
-    self.ESP_Range = 1000
+    self.ShowLines = false
     self.ShowDistance = false
+    self.ESP_Range = 500
     self.manageRef = manageRef
     self.espTab = manageRef.Window:CreateTab("ESP", "eye")
 

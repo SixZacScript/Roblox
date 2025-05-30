@@ -1,22 +1,42 @@
 local allFields = {
-    "Sunflower Field",
-    "Clover Field",
-    "Dandelion Field",
-    "Blue Flower Field",
-    "Mushroom Field",
-    "Spider Field",
-    "Strawberry Field",
-    "Bamboo Field",
-    "Pineapple Patch",
-    "Pumpkin Patch",
-    "Cactus Field",
-    "Pine Tree Forest",
-    "Rose Field",
-    "Mountain Top Field",
-    "Coconut Field",
-    "Pepper Patch"
+    ["Sunflower Field"] = "🌻 Sunflower Field",
+    ["Clover Field"] = "☘️ Clover Field",
+    ["Dandelion Field"] = "🌼 Dandelion Field",
+    ["Blue Flower Field"] = "🌿 Blue Flower Field",
+    ["Mushroom Field"] = "🍄 Mushroom Field",
+    ["Spider Field"] = "🕸️ Spider Field",
+    ["Strawberry Field"] = "🍓 Strawberry Field",
+    ["Bamboo Field"] = "🎌 Bamboo Field",
+    ["Pineapple Patch"] = "🍍 Pineapple Patch",
+    ["Pumpkin Patch"] = "🎃 Pumpkin Patch",
+    ["Cactus Field"] = "🌵 Cactus Field",
+    ["Pine Tree Forest"] = "🌳 Pine Tree Forest",
+    ["Rose Field"] = "🌹 Rose Field",
+    ["Mountain Top Field"] = "⛰️ Mountain Top Field",
+    ["Coconut Field"] = "🥥 Coconut Field",
+    ["Pepper Patch"] = "🌶️ Pepper Patch",
 }
+local displayOptions = {}
 
+local function getAllFieldKeys()
+    local keys = {}
+    for key, _ in pairs(allFields) do
+        table.insert(keys, key)
+    end
+    return keys
+end
+
+local function getFieldName(iconLabel)
+    for key, label in pairs(allFields) do
+        if label == iconLabel then
+            return key
+        end
+    end
+    return nil
+end
+for _, key in ipairs(getAllFieldKeys()) do
+    table.insert(displayOptions, allFields[key])
+end
 local FarmTab = {}
 FarmTab.__index = FarmTab
 
@@ -26,11 +46,14 @@ function FarmTab.new(manageRef)
     self.mainTab:CreateSection("Farming Zones")
     self.mainTab:CreateDropdown({
 		Name = "Select a Flower Zone",
-		Options = allFields,
-		CurrentOption = shared.main.currentField.Name,
-		Callback = function(zone)
-			self.selectedZone = typeof(zone) == "table" and zone[1] or zone
-			shared.main.currentField = manageRef.flowerZones:FindFirstChild(self.selectedZone)
+		Options = displayOptions,
+		CurrentOption = allFields[shared.main.currentField.Name],
+		Callback = function(label)
+			local key = getFieldName(typeof(label) == "table" and label[1] or label)
+			if key then
+				self.selectedZone = key
+				shared.main.currentField = manageRef.flowerZones:FindFirstChild(key)
+			end
 		end
 	})
     self.mainTab:CreateToggle({
