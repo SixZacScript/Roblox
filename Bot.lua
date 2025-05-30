@@ -146,6 +146,11 @@ function Bot:initItemListener()
 
     CollectiblesFolder.ChildAdded:Connect(function(item)
         local currentField = shared.main.currentField
+        local root = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+        if not root then return end
+
+        local yDiff = math.abs(item.Position.Y - root.Position.Y)
+        if yDiff > 4 then return end
         local inField = (item.Position - currentField.Position).Magnitude <= currentField.Size.Magnitude / 2
         if item:IsA("BasePart") and not item:GetAttribute("Collected") and inField then
             local decal = item:FindFirstChildOfClass("Decal")
