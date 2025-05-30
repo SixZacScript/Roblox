@@ -84,15 +84,15 @@ function FarmTab.new(manageRef)
         end
     })
 
-	self.mainTab:CreateDropdown({
-		Name = "Token Mode",
-		Options = {"First", 'Nearest'},
-		CurrentOption = 'First',
-		Callback = function(mode)
-			local newMode = typeof(mode) == "table" and mode[1] or mode
-            shared.main.tokenMode = newMode
-		end
-	})
+	-- self.mainTab:CreateDropdown({
+	-- 	Name = "Token Mode",
+	-- 	Options = {"First", 'Nearest'},
+	-- 	CurrentOption = 'First',
+	-- 	Callback = function(mode)
+	-- 		local newMode = typeof(mode) == "table" and mode[1] or mode
+    --         shared.main.tokenMode = newMode
+	-- 	end
+	-- })
 
     self.mainTab:CreateSection("Collect Only Token")
 
