@@ -263,18 +263,14 @@ function Bot:farmAt()
 
     local function startPatrolling()
         local maxRadius = math.min(Field.Size.X, Field.Size.Z) / 2 - 5
-        local patrolPoints = getRandomPositionInField(maxRadius)
-        local patrolIndex = 1
+        local targetPos = getRandomPositionInField(maxRadius)
         local isMoving = false
         local currentItem = nil
         local root = self.character and self.character:FindFirstChild("HumanoidRootPart")
 
         while shared.main.autoFarm and not shared.main.convertPollen do
-            if not isMoving and #patrolPoints > 0 then
+            if not isMoving  then
                 isMoving = true
-                local targetPos = patrolPoints[patrolIndex]
-                patrolIndex = patrolIndex % #patrolPoints + 1
-
                 self:addTask({
                     type = "walk",
                     position = targetPos,
