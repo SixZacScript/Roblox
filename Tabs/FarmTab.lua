@@ -18,13 +18,15 @@ local allFields = {
     ["Pepper Patch"] = "🌶️ Pepper Patch",
 }
 
+local orderedFieldKeys = {
+    "Sunflower Field", "Clover Field", "Dandelion Field", "Blue Flower Field",
+    "Mushroom Field", "Spider Field", "Strawberry Field", "Bamboo Field",
+    "Pineapple Patch", "Pumpkin Patch", "Cactus Field", "Pine Tree Forest",
+    "Rose Field", "Mountain Top Field", "Coconut Field", "Pepper Patch"
+}
+
 local function getAllFieldKeys()
-    local keys = {}
-    for key, _ in pairs(allFields) do
-        table.insert(keys, key)
-    end
-    table.sort(keys)
-    return keys
+    return orderedFieldKeys
 end
 
 local function getFieldName(iconLabel)
