@@ -3,7 +3,6 @@ local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
 local DecorationsFolder = Workspace:WaitForChild("Decorations")
 -- local Window = loadstring(game:HttpGet('https://raw.githubusercontent.com/SixZacScript/Roblox/refs/heads/main/Window.lua'))()
-local Window = loadstring(readfile("BeeSwarm/Window.lua"))()
 
 -- FarmingManager Class
 local FarmingManager = {}
@@ -15,6 +14,7 @@ function FarmingManager.new()
 	-- self.botHelper = loadstring(game:HttpGet('https://raw.githubusercontent.com/SixZacScript/Roblox/refs/heads/main/Bot.lua'))()
 	-- self.PlayerMovement = loadstring(game:HttpGet("https://raw.githubusercontent.com/SixZacScript/Roblox/refs/heads/main/PlayerMovement.lua"))()
 	-- self.TokenData = loadstring(game:HttpGet("https://raw.githubusercontent.com/SixZacScript/Roblox/refs/heads/main/TokenData.lua"))()
+	self.Window = loadstring(readfile("BeeSwarm/Window.lua"))()
 	self.botHelper = loadstring(readfile("BeeSwarm/Bot.lua"))()
     self.PlayerMovement = loadstring(readfile("BeeSwarm/PlayerMovement.lua"))()
     self.TokenData = loadstring(readfile("BeeSwarm/TokenData.lua"))()
@@ -36,8 +36,25 @@ function FarmingManager.new()
 	self.Hive = self.HoneycombObject and self.HoneycombObject.Value or nil
 	-- Initialize other properties
 	self.zoneNames = {}
-	self.selectedZone = "Dandelion Field"
-
+	self.selectedZone = "Sunflower Field"
+	self.allFields = {
+		"Sunflower Field",
+		"Clover Field",
+		"Dandelion Field",
+		"Blue Flower Field",
+		"Mushroom Field",
+		"Spider Field",
+		"Strawberry Field",
+		"Bamboo Field",
+		"Pineapple Patch",
+		"Pumpkin Patch",
+		"Cactus Field",
+		"Pine Tree Forest",
+		"Rose Field",
+		"Mountain Top Field",
+		"Coconut Field",
+		"Pepper Patch"
+	}
 	
 	self:init()
 	return self
@@ -50,15 +67,18 @@ function FarmingManager:init()
 
 	shared.main = {
 		currentField = self.flowerZones:FindFirstChild(self.selectedZone),
-		startFarming = false,
+		autoFarm = false,
 		autoDigEnabled = true,
 		convertPollen = false,
+
 		tokenMode = 'First',
 		tokenList = {},
+
 		Pollen = self.Pollen.Value or 0,
 		Capacity = self.Capacity.Value or 0,
 		Honey = self.Honey.Value or 0,
 		Hove = self.Hive,
+
 		tweenSpeed = 0.6,
 		tokenRadius = 35,
 
@@ -71,7 +91,7 @@ function FarmingManager:init()
 	for _, prop in ipairs({"Capacity", "Pollen", "Honey"}) do
 		self[prop]:GetPropertyChangedSignal("Value"):Connect(function()
 			shared.main[prop] = self[prop].Value
-			if shared.main.startFarming then self.botHelper:checkPollen() end
+			if shared.main.autoFarm then self.botHelper:checkPollen() end
 		end)
 	end
 end
@@ -83,25 +103,19 @@ function FarmingManager:updateCharacter()
 end
 
 function FarmingManager:createUI()
-	local mainTab = Window:CreateTab("Main", "flower")
-	local movementTab = Window:CreateTab("Movement", "dumbbell")
-	local bindTab = Window:CreateTab("Keybinds", "keyboard")
+	local mainTab = self.Window:CreateTab("Main", "flower")
+	local movementTab = self.Window:CreateTab("Movement", "dumbbell")
+	local bindTab = self.Window:CreateTab("Keybinds", "keyboard")
 
 	mainTab:CreateSection("Farming Zones")
 
 	mainTab:CreateDropdown({
 		Name = "Select a Flower Zone",
-		Options = self.zoneNames,
+		Options = self.allFields,
 		CurrentOption = self.selectedZone,
 		Callback = function(zone)
 			self.selectedZone = typeof(zone) == "table" and zone[1] or zone
 			shared.main.currentField = self.flowerZones:FindFirstChild(self.selectedZone)
-			if shared.main.startFarming then
-				self.botHelper:checkPollen(function()
-					self.botHelper:stopFarming()
-					self.botHelper:startFarming()
-				end)
-			end
 		end
 	})
 
@@ -122,16 +136,16 @@ function FarmingManager:createUI()
 	})
 
 	self.farmToggle = mainTab:CreateToggle({
-		Name = "Start Farming",
+		Name = "Auto Farm",
 		CurrentValue = false,
 		Callback = function(value)
 			if not value then 
-				shared.main.startFarming = false
-				self.botHelper:addTask({type = "stop"})
+				shared.main.autoFarm = false
+				self.botHelper:stopFarming()
 				return
 			end
-			shared.main.startFarming = true
-			self.botHelper:addTask({type = "start"})
+			shared.main.autoFarm = true
+			self.botHelper:startFarming()
 		end
 	})
 	mainTab:CreateDropdown({
@@ -178,7 +192,7 @@ function FarmingManager:createUI()
 		HoldToInteract = false,
 		Flag = "Keybind1",
 		Callback = function(Keybind)
-			self.farmToggle:Set(not shared.main.startFarming)
+			self.farmToggle:Set(not shared.main.autoFarm)
 		end,
 	})
 	for _, part in pairs(DecorationsFolder:GetDescendants()) do

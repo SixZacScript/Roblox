@@ -2,8 +2,8 @@ local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 
 local PlayerMovementModule = {
-	currentWalkSpeed = 16,
-	currentJumpPower = 50
+	currentWalkSpeed = 70,
+	currentJumpPower = 75
 }
 
 function PlayerMovementModule:start(mainTab)

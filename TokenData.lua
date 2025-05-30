@@ -5,6 +5,7 @@ return  {
     ["Speed"] = 65867881,
     ["Focus"] = 1629649299,
     ["Pulse"] = 1874564120,
+    ['Rage'] = 1442700745,
 
     -- Honey-related
     ["Honey"] = 1472135114,
@@ -44,12 +45,18 @@ return  {
     -- Items/Consumables
     ["Antpass"] = 2060626811,
     ["Gumdrops"] = 1838129169,
+    ['Oil'] = 2545746575,
     ["Glitter"] = 2542899798,
+    ['Moon Charm'] = 2306224717,
     ["Glue"] = 2504978518,
     ["Treat"] = 2028574353,
+    ['Blue Berry'] = 2028453802,
     ["Ticket"] = 1674871631,
     ["Cloud Vial"] = 3030569073,
     ["Micro Converter"] = 2863122826,
+    ['Blue Extract'] = 2495936068,
+    ['Red Extract'] = 2495935302,
+    ['Pprout'] = 2529092039,
 
     -- Robot/Drive
     ["Robot Pass"] = 3036899811,
