@@ -66,7 +66,7 @@ end
 
 function Bot:executeTask(taskData)
 	if taskData.type == "walk" then
-		self:walkTo(taskData.position, taskData.onComplete)
+		self:walkTo(taskData.position, taskData.onComplete, taskData.onMove)
 	elseif taskData.type == "fly" then
 		self:flyTo(taskData.position, taskData.onComplete)
 	elseif taskData.type == "convert" then
@@ -75,40 +75,74 @@ function Bot:executeTask(taskData)
 end
 
 function Bot:flyTo(position, onComplete)
-	local rootPart = self.character:FindFirstChild("HumanoidRootPart")
-	if not rootPart then return end
+    local rootPart = self.character:FindFirstChild("HumanoidRootPart")
+    if not rootPart then return end
 
-	local duration = shared.main.tweenSpeed or 0.6
-	local tween = TweenService:Create(rootPart, TweenInfo.new(duration, Enum.EasingStyle.Linear), {
-		CFrame = CFrame.new(position)
-	})
-	tween:Play()
-	tween.Completed:Connect(function()
-		if onComplete then onComplete() end
-	end)
-end
-function Bot:initItemListener()
-    self.itemQueue = {}
+    local duration = shared.main.tweenSpeed or 0.6
+    local tween = TweenService:Create(rootPart, TweenInfo.new(duration, Enum.EasingStyle.Linear), {
+        CFrame = CFrame.new(position)
+    })
 
-    -- for _, item in ipairs(CollectiblesFolder:GetChildren()) do
-    --     if item:IsA("BasePart") and not item:GetAttribute("Collected") then
-    --         table.insert(self.itemQueue, item)
-    --     end
-    -- end
+    local completed = false
 
-    CollectiblesFolder.ChildAdded:Connect(function(item)
-        if item:IsA("BasePart") and not item:GetAttribute("Collected") then
-            table.insert(self.itemQueue, item)
+    tween:Play()
+
+    local timeoutThread = task.delay(duration + 1, function()
+        if not completed then
+            tween:Cancel()
+            rootPart.CFrame = CFrame.new(position)
+            if onComplete then onComplete() end
         end
     end)
 
-    CollectiblesFolder.ChildRemoved:Connect(function(item)
+    tween.Completed:Connect(function()
+        if not completed then
+            completed = true
+            if onComplete then onComplete() end
+        end
+    end)
+end
+
+function Bot:initItemListener()
+    self.itemQueue = {}
+    local LocalPlayer = game.Players.LocalPlayer
+    local function  removeQ(item)
         for i, v in ipairs(self.itemQueue) do
             if v == item then
                 table.remove(self.itemQueue, i)
                 break
             end
         end
+        
+    end
+    CollectiblesFolder.ChildAdded:Connect(function(item)
+        local currentField = shared.main.currentField
+        local inField = (item.Position - currentField.Position).Magnitude <= currentField.Size.Magnitude / 2
+        if item:IsA("BasePart") and not item:GetAttribute("Collected") and inField then
+            local decal = item:FindFirstChildOfClass("Decal")
+            local texture = decal and decal.Texture or ""
+            local assetID = tonumber(texture:match("(%d+)$"))
+            if assetID and not shared.main.tokenList[assetID] then return end
+
+            table.insert(self.itemQueue, item)
+            local connection
+            connection = item.Touched:Connect(function(hit)
+                if hit and hit:IsDescendantOf(LocalPlayer.Character) then
+                    if not item:GetAttribute("Collected") then
+                        item:SetAttribute("Collected", true)
+                        item.Color = Color3.fromRGB(0, 255, 55)
+                        if connection and connection.Connected then
+                            removeQ(item)
+                            connection:Disconnect()
+                        end
+                    end
+                end
+            end)
+        end
+    end)
+
+    CollectiblesFolder.ChildRemoved:Connect(function(item)
+        removeQ(item)
     end)
 end
 
@@ -117,47 +151,59 @@ function Bot:getNextItem()
     local currentField = shared.main.currentField
     if not root or not currentField then return nil end
 
-    for i, item in ipairs(self.itemQueue) do
-        local inField = (item.Position - currentField.Position).Magnitude <= currentField.Size.Magnitude / 2
-        if item:IsA("BasePart")and not item:GetAttribute("Collected") and inField then
-            local decal = item:FindFirstChildOfClass("Decal")
-            local texture = decal and decal.Texture or ""
-            local assetID = tonumber(texture:match("(%d+)$"))
-            if assetID and not shared.main.tokenList[assetID] then continue end
-            table.remove(self.itemQueue, i)
-            return item
-        end
-    end
-    return nil
+    return self.itemQueue[1] or nil
 end
 
-function Bot:walkTo(position, onComplete)
+
+
+function Bot:walkTo(position, onComplete, onMove)
     local humanoid = self.character:FindFirstChildOfClass("Humanoid")
     local root = self.character:FindFirstChild("HumanoidRootPart")
     local finished = false
     if not humanoid or not root then return end
 
-    -- Timeout ถ้าเดินไม่ถึงภายใน 5 วินาที
-    task.delay(5, function()
-        if not finished then
+    local function safeDisconnect(conn)
+        if conn and typeof(conn) == "RBXScriptConnection" and conn.Connected then
+            conn:Disconnect()
+        end
+    end
+
+    local lastPosition = root.Position
+    local moveConn
+    local moveToConn
+    local timeoutStart = tick()
+
+    local function handleDisconnect()
+        safeDisconnect(moveConn)
+        safeDisconnect(moveToConn)
+    end
+
+    humanoid:MoveTo(position)
+
+    moveConn = game:GetService("RunService").Heartbeat:Connect(function()
+        if (tick() - timeoutStart) >= 5 and not finished then
             finished = true
-            shared.Rayfield:Notify({
-                Title = "Failed to walk",
-                Content = "Timeout: Failed to reach position within 5 seconds",
-                Duration = 6.5,
-                Image = 4483362458,
-            })
+            handleDisconnect()
+            warn("WalkTo timeout, cancelling task.")
             if onComplete then onComplete() end
+        elseif onMove and (root.Position - lastPosition).Magnitude > 0.01 then
+            onMove(moveToConn, handleDisconnect)
+            lastPosition = root.Position
         end
     end)
 
-
-    humanoid:MoveTo(position)
-    humanoid.MoveToFinished:Once(function(reached)
-        finished = true
-        if onComplete then onComplete() end
+    moveToConn = humanoid.MoveToFinished:Connect(function(reached)
+        if not finished then
+            finished = true
+            handleDisconnect()
+            if onComplete then onComplete() end
+        end
     end)
 end
+
+
+
+
 
 
 function Bot:stopFarming()
@@ -175,70 +221,68 @@ function Bot:startFarming()
         self:farmAt()
     end)
 end
-
 function Bot:farmAt()
     local Field = shared.main.currentField
     local FieldPosition = Field.Position + Vector3.new(0, 3, 0)
-    local root = self.character and self.character:FindFirstChild("HumanoidRootPart")
-    local function isInField()
-        local root = self.character and self.character:FindFirstChild("HumanoidRootPart")
+    local function isInField(root)
         if not root then return false end
         local pos, size = root.Position, Field.Size
         return pos.X >= Field.Position.X - size.X/2 and pos.X <= Field.Position.X + size.X/2
             and pos.Z >= Field.Position.Z - size.Z/2 and pos.Z <= Field.Position.Z + size.Z/2
     end
 
-
     local function getRandomPositionInField()
-        local randomX = Field.Position.X + math.random(-Field.Size.X/2 + 5, Field.Size.X/2 - 5)
-        local randomZ = Field.Position.Z + math.random(-Field.Size.Z/2 + 5, Field.Size.Z/2 - 5)
+        local halfSizeX, halfSizeZ = Field.Size.X/2, Field.Size.Z/2
+        local randomX = Field.Position.X + math.random(-halfSizeX + 5, halfSizeX - 5)
+        local randomZ = Field.Position.Z + math.random(-halfSizeZ + 5, halfSizeZ - 5)
         return Vector3.new(randomX, Field.Position.Y + 3, randomZ)
     end
-    
+
     local function startPatrolling()
         local isMoving = false
         local currentItem = nil
-        while shared.main.autoFarm and not shared.main.convertPollen do 
-            if not isMoving then 
+        local root = self.character and self.character:FindFirstChild("HumanoidRootPart")
+        while shared.main.autoFarm and not shared.main.convertPollen do
+            if not isMoving then
                 isMoving = true
-                local randomPosition = getRandomPositionInField()
                 self:addTask({
                     type = "walk",
-                    position = randomPosition,
+                    position = getRandomPositionInField(),
                     onComplete = function()
-                         isMoving = false
+                        isMoving = false
                         if Field ~= shared.main.currentField then
                             return self:farmAt()
                         end
-                    end
-                })
-                while isMoving do
-                    if shared.main.autoFarm and not shared.main.convertPollen and not currentItem then
-                        currentItem = self:getNextItem()
-                         if currentItem then
+                    end,
+                    onMove = function(_, handleDisconnect)
+                        if currentItem then return end
+                        local newItem = self:getNextItem()
+                        if newItem then
+                            currentItem = newItem
+                            handleDisconnect()
+
                             local itemPos = Vector3.new(currentItem.Position.X, root.Position.Y, currentItem.Position.Z)
                             self:cancelCurrentTask()
                             self:addTask({
                                 type = "walk",
                                 position = itemPos,
                                 onComplete = function()
-                                    currentItem:SetAttribute("Collected", true)
                                     isMoving = false
                                     currentItem = nil
                                 end
                             })
                         end
                     end
-                    task.wait()
-                end
+                })
             end
             task.wait()
         end
     end
-    
-    if not isInField() then
-        self:addTask({ 
-            type = "fly", 
+
+    local root = self.character and self.character:FindFirstChild("HumanoidRootPart")
+    if not isInField(root) then
+        self:addTask({
+            type = "fly",
             position = FieldPosition,
             onComplete = startPatrolling
         })
@@ -246,6 +290,7 @@ function Bot:farmAt()
         startPatrolling()
     end
 end
+
 
 function Bot:checkPollen(onComplete)
     if shared.main.Pollen >= shared.main.Capacity and not shared.main.convertPollen  then

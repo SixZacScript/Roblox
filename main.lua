@@ -2,7 +2,8 @@
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
 local DecorationsFolder = Workspace:WaitForChild("Decorations")
--- local Window = loadstring(game:HttpGet('https://raw.githubusercontent.com/SixZacScript/Roblox/refs/heads/main/Window.lua'))()
+local FieldDecosFolder = Workspace:WaitForChild("FieldDecos")
+local Window = loadstring(game:HttpGet('https://raw.githubusercontent.com/SixZacScript/Roblox/refs/heads/main/Window.lua'))()
 
 -- FarmingManager Class
 local FarmingManager = {}
@@ -10,11 +11,12 @@ FarmingManager.__index = FarmingManager
 
 function FarmingManager.new()
 	local self = setmetatable({}, FarmingManager)
+	self.Window = loadstring(game:HttpGet('https://raw.githubusercontent.com/SixZacScript/Roblox/refs/heads/main/Window.lua'))()
 	-- External Helpers
-	-- self.botHelper = loadstring(game:HttpGet('https://raw.githubusercontent.com/SixZacScript/Roblox/refs/heads/main/Bot.lua'))()
-	-- self.PlayerMovement = loadstring(game:HttpGet("https://raw.githubusercontent.com/SixZacScript/Roblox/refs/heads/main/PlayerMovement.lua"))()
-	-- self.TokenData = loadstring(game:HttpGet("https://raw.githubusercontent.com/SixZacScript/Roblox/refs/heads/main/TokenData.lua"))()
-	self.Window = loadstring(readfile("BeeSwarm/Window.lua"))()
+	self.botHelper = loadstring(game:HttpGet('https://raw.githubusercontent.com/SixZacScript/Roblox/refs/heads/main/Bot.lua'))()
+	self.PlayerMovement = loadstring(game:HttpGet("https://raw.githubusercontent.com/SixZacScript/Roblox/refs/heads/main/PlayerMovement.lua"))()
+	self.TokenData = loadstring(game:HttpGet("https://raw.githubusercontent.com/SixZacScript/Roblox/refs/heads/main/TokenData.lua"))()
+	-- self.Window = loadstring(readfile("BeeSwarm/Window.lua"))()
 	self.botHelper = loadstring(readfile("BeeSwarm/Bot.lua"))()
     self.PlayerMovement = loadstring(readfile("BeeSwarm/PlayerMovement.lua"))()
     self.TokenData = loadstring(readfile("BeeSwarm/TokenData.lua"))()
@@ -105,6 +107,7 @@ end
 function FarmingManager:createUI()
 	local mainTab = self.Window:CreateTab("Main", "flower")
 	local movementTab = self.Window:CreateTab("Movement", "dumbbell")
+	local espTab = self.Window:CreateTab("ESP", "eye")
 	local bindTab = self.Window:CreateTab("Keybinds", "keyboard")
 
 	mainTab:CreateSection("Farming Zones")
@@ -195,12 +198,18 @@ function FarmingManager:createUI()
 			self.farmToggle:Set(not shared.main.autoFarm)
 		end,
 	})
-	for _, part in pairs(DecorationsFolder:GetDescendants()) do
-		if part:IsA("BasePart") then
-			part.CanCollide = false
-			part.Transparency = 0.3
+	local function setDecoParts(folder)
+		for _, part in ipairs(folder:GetDescendants()) do
+			if part:IsA("BasePart") then
+				part.CanCollide = false
+				part.Transparency = 0.3
+			end
 		end
 	end
+
+	setDecoParts(DecorationsFolder)
+	setDecoParts(FieldDecosFolder)
+
 end
 
 FarmingManager.new()
