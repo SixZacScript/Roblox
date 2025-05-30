@@ -146,11 +146,6 @@ function Bot:initItemListener()
 
     CollectiblesFolder.ChildAdded:Connect(function(item)
         local currentField = shared.main.currentField
-        local root = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-        if not root then return end
-
-        local yDiff = math.abs(item.Position.Y - root.Position.Y)
-        if yDiff > 4 then return end
         local inField = (item.Position - currentField.Position).Magnitude <= currentField.Size.Magnitude / 2
         if item:IsA("BasePart") and not item:GetAttribute("Collected") and inField then
             local decal = item:FindFirstChildOfClass("Decal")
@@ -237,10 +232,15 @@ function Bot:walkTo(position, onComplete, onMove)
     end)
 end
 
+
+
+
+
+
+
 function Bot:farmAt()
     local Field = shared.main.currentField
     local FieldPosition = Field.Position + Vector3.new(0, 3, 0)
-
     local function isInField(root)
         if not root then return false end
         local pos, size = root.Position, Field.Size
@@ -248,32 +248,23 @@ function Bot:farmAt()
             and pos.Z >= Field.Position.Z - size.Z/2 and pos.Z <= Field.Position.Z + size.Z/2
     end
 
-    local function getRandomPositionInField(maxRadius)
-        local center = Vector3.new(Field.Position.X, Field.Position.Y + 3, Field.Position.Z)
-        local radius = math.random() * maxRadius
-        local angle = math.random() * math.pi * 2
-
-        local offsetX = math.cos(angle) * radius
-        local offsetZ = math.sin(angle) * radius
-
-        return center + Vector3.new(offsetX, 0, offsetZ)
+    local function getRandomPositionInField()
+        local halfSizeX, halfSizeZ = Field.Size.X/2, Field.Size.Z/2
+        local randomX = Field.Position.X + math.random(-halfSizeX + 5, halfSizeX - 5)
+        local randomZ = Field.Position.Z + math.random(-halfSizeZ + 5, halfSizeZ - 5)
+        return Vector3.new(randomX, Field.Position.Y + 3, randomZ)
     end
 
-
-
     local function startPatrolling()
-        local maxRadius = math.min(Field.Size.X, Field.Size.Z) / 2 - 5
-        local targetPos = getRandomPositionInField(maxRadius)
         local isMoving = false
         local currentItem = nil
         local root = self.character and self.character:FindFirstChild("HumanoidRootPart")
-
         while shared.main.autoFarm and not shared.main.convertPollen do
-            if not isMoving  then
+            if not isMoving then
                 isMoving = true
                 self:addTask({
                     type = "walk",
-                    position = targetPos,
+                    position = getRandomPositionInField(),
                     onComplete = function()
                         isMoving = false
                         if Field ~= shared.main.currentField then
@@ -312,6 +303,7 @@ function Bot:farmAt()
             position = FieldPosition,
             onComplete = function()
                 task.wait(1)
+
                 startPatrolling()
             end
         })
