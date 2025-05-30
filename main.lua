@@ -10,7 +10,7 @@ FarmingManager.__index = FarmingManager
 
 function FarmingManager.new()
 	local self = setmetatable({}, FarmingManager)
-	local DEBUG_MODE = true
+	local DEBUG_MODE = false
 	local basePath = DEBUG_MODE and "BeeSwarm/" or "https://raw.githubusercontent.com/SixZacScript/Roblox/refs/heads/main/"
 	local loader = DEBUG_MODE and function(path) return loadstring(readfile(basePath .. path))() end or function(path) return loadstring(game:HttpGet(basePath .. path))() end
 
