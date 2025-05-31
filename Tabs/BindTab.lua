@@ -13,6 +13,15 @@ function Bind.new(manageRef)
 			manageRef.farmTab.farmToggle:Set(not shared.main.autoFarm)
 		end,
 	})
+    self.GoToHaveKeybind = self.bindTab:CreateKeybind({
+		Name = "Go To Hive",
+		CurrentKeybind = "B",
+		HoldToInteract = false,
+		Flag = "Keybind2",
+		Callback = function(Keybind)
+			shared.hiveHelper:gotoHive()
+		end,
+	})
 end
 
 return Bind

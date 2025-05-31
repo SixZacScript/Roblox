@@ -20,7 +20,8 @@ function FarmingManager.new()
 	self.espTab      = loader("Tabs/ESPTab.lua")
 	self.bindTab     = loader("Tabs/BindTab.lua")
 	
-	self.botHelper   = loader("Bot.lua")
+	self.hiveHelper   = loader("Helpers/Hive.lua")
+	self.botHelper   = loader("Helpers/AutoFarm.lua")
 	self.TokenData   = loader("TokenData.lua")
 
 
@@ -44,20 +45,14 @@ function FarmingManager.new()
 end
 
 function FarmingManager:init()
-
+	shared.hiveHelper = self.hiveHelper.new()
 	shared.main = {
 		currentField = self.flowerZones:FindFirstChild("Sunflower Field"),
-		autoFarm = false,
-		convertPollen = false,
-
-		tokenMode = 'First',
-		tokenList = {},
 
 		Pollen = self.Pollen.Value or 0,
 		Capacity = self.Capacity.Value or 0,
 		Honey = self.Honey.Value or 0,
-		Hive = self.Hive,
-
+		tokenList = {},
 		tweenSpeed = 0.6,
 		tokenRadius = 35,
 		defaultWalkSpeed = 60,
@@ -67,22 +62,29 @@ function FarmingManager:init()
 	-- tabs
 	self.farmTab = self.farmTab.new(self)
 	self.movementTab = self.movementTab.new(self)
-	self.espTab = self.espTab.new(self)
+	-- self.espTab = self.espTab.new(self)
 	self.bindTab = self.bindTab.new(self)
 
 	-- helpers
-	self.botHelper = self.botHelper.new(self.character, self)
+	self.botHelper = self.botHelper.new(self)
+
 	for _, prop in ipairs({"Capacity", "Pollen", "Honey"}) do
 		self[prop]:GetPropertyChangedSignal("Value"):Connect(function()
 			shared.main[prop] = self[prop].Value
-			if shared.main.autoFarm then self.botHelper:checkPollen() end
 		end)
 	end
 
 	self.farmTab.onAutoFarmToggle = function(Enabled)
-		if not Enabled then self.botHelper:stopFarming() return end
-		self.botHelper:startFarming()
+		if not Enabled then self.botHelper:stop() return end
+		self.botHelper:start()
 	end
+	self.farmTab.onFieldChange = function(field)
+		if self.botHelper.autoFarm then
+			self.botHelper:stop()
+			self.botHelper:start()
+		end
+	end
+	shared.hiveHelper = self.hiveHelper.new()
 end
 
 

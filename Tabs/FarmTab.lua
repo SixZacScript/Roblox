@@ -60,6 +60,7 @@ function FarmTab.new(manageRef)
 			if key then
 				self.selectedZone = key
 				shared.main.currentField = manageRef.flowerZones:FindFirstChild(key)
+                self.onFieldChange(shared.main.currentField)
 			end
 		end
 	})
@@ -122,7 +123,6 @@ function FarmTab.new(manageRef)
             })
         end
     })
-
     self.mainTab:CreateButton({
         Name = "Toggle All Tokens",
         Callback = function()

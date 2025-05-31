@@ -6,7 +6,7 @@ return Rayfield:CreateWindow({
     LoadingTitle = "Rayfield Interface Suite",
     LoadingSubtitle = "by Sirius",
     ConfigurationSaving = {
-        Enabled = true,
+        Enabled = false,
         FolderName = nil,
         FileName = "FlowerZonesConfig"
     },
