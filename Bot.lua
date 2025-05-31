@@ -145,8 +145,10 @@ function Bot:initItemListener()
         end)
     end
     ParticlesFoler.ChildAdded:Connect(function(item)
+         local currentField = shared.main.currentField
+        local inField = (item.Position - currentField.Position).Magnitude <= currentField.Size.Magnitude / 2
         local isBubble = item.Name == "Bubble"
-        if isBubble and shared.main.farmBubble then
+        if isBubble and shared.main.farmBubble and inField then
             table.insert(self.itemQueue, item)
         end
     end)
