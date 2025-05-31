@@ -12,6 +12,7 @@ local allFields = {
     ["Cactus Field"] = "🌵 Cactus Field",
     ["Pine Tree Forest"] = "🌳 Pine Tree Forest",
     ["Rose Field"] = "🌹 Rose Field",
+    ["Stump Field"] = "🪵 Stump Field",
     ["Mountain Top Field"] = "⛰️ Mountain Top Field",
     ["Coconut Field"] = "🫕 Coconut Field",
     ["Pepper Patch"] = "🌶️ Pepper Patch",
@@ -21,7 +22,7 @@ local orderedFieldKeys = {
     "Sunflower Field", "Dandelion Field","Clover Field","Mushroom Field",
     "Blue Flower Field", "Spider Field", "Strawberry Field", "Bamboo Field",
     "Pineapple Patch", "Pumpkin Patch", "Cactus Field", "Pine Tree Forest",
-    "Rose Field", "Mountain Top Field", "Coconut Field", "Pepper Patch"
+    "Rose Field", "Stump Field", "Mountain Top Field", "Coconut Field", "Pepper Patch"
 }
 
 local function getAllFieldKeys()
