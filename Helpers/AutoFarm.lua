@@ -28,7 +28,7 @@ function AutoFarm.new(manageRef)
         local currentField = shared.main.currentField
         local inField = (item.Position - currentField.Position).Magnitude <= currentField.Size.Magnitude / 2
         local decal = item:FindFirstChild("FrontDecal")
-        local assetId = decal and decal.Texture or nil 
+        local assetId = tonumber(decal.Texture:match("rbxassetid://(%d+)"))
         local isCollectible = assetId and shared.main.tokenList[assetId] or false
         if item:IsA("BasePart") and not item:GetAttribute("Collected") and inField and isCollectible then
             table.insert(self.itemQueue, item)
