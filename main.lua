@@ -19,7 +19,7 @@ function FarmingManager.new()
 	self.bindTab     = loader("Tabs/BindTab.lua")
 	
 	shared.TokenHelper   = loader("Helpers/TokenHelper.lua")
-	self.hiveHelper   = loader("Helpers/Hive.lua")
+	local HiveHelper = loader("Helpers/Hive.lua")
 	self.botHelper   = loader("Helpers/AutoFarm.lua")
 	self.TokenData   = loader("TokenData.lua")
 
@@ -36,15 +36,13 @@ function FarmingManager.new()
 	self.Pollen = self.CoreStats:WaitForChild("Pollen")
 	self.Honey = self.CoreStats:WaitForChild("Honey")
 	self.Capacity = self.CoreStats:WaitForChild("Capacity")
-	self.HoneycombObject = self.localPlayer:FindFirstChild("Honeycomb")
-	self.Hive = self.HoneycombObject and self.HoneycombObject.Value or nil
+	shared.hiveHelper = HiveHelper.new()
 
 	self:init()
 	return self
 end
 
 function FarmingManager:init()
-	shared.hiveHelper = self.hiveHelper.new()
 	shared.main = {
 		currentField = self.flowerZones:FindFirstChild("Sunflower Field"),
 

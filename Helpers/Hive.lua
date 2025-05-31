@@ -6,7 +6,6 @@ HiveHelper.__index = HiveHelper
 function HiveHelper.new()
     local self = setmetatable({}, HiveHelper)
     self.Hive = self:getHive()
-
     return self
 end
 function HiveHelper:getPlayerCharacter()
