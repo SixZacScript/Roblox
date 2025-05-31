@@ -8,7 +8,7 @@ FarmingManager.__index = FarmingManager
 
 function FarmingManager.new()
 	local self = setmetatable({}, FarmingManager)
-	local DEBUG_MODE = false
+	local DEBUG_MODE = true
 	local basePath = DEBUG_MODE and "BeeSwarm/" or "https://raw.githubusercontent.com/SixZacScript/Roblox/refs/heads/main/"
 	local loader = DEBUG_MODE and function(path) return loadstring(readfile(basePath .. path))() end or function(path) return loadstring(game:HttpGet(basePath .. path))() end
 
@@ -18,6 +18,7 @@ function FarmingManager.new()
 	self.espTab      = loader("Tabs/ESPTab.lua")
 	self.bindTab     = loader("Tabs/BindTab.lua")
 	
+	shared.TokenHelper   = loader("Helpers/TokenHelper.lua")
 	self.hiveHelper   = loader("Helpers/Hive.lua")
 	self.botHelper   = loader("Helpers/AutoFarm.lua")
 	self.TokenData   = loader("TokenData.lua")

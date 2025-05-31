@@ -1,11 +1,5 @@
 local TokenHelper = {}
 
-function TokenHelper.new()
-    local self = setmetatable({}, { __index = TokenHelper })
-
-
-    return self
-end
 function TokenHelper:getAllToken()
     return {
         -- Boosts
@@ -75,6 +69,15 @@ function TokenHelper:getAllToken()
         -- Balloons
         ["🎈 Red Balloon"] = {id = 8058047989, isSkill = false},
     }
+end
+
+function TokenHelper:getTokenById(searchId)
+    for name, data in pairs(self:getAllToken()) do
+        if data.id == searchId then
+            return name, data
+        end
+    end
+    return nil
 end
 
 return TokenHelper

@@ -27,7 +27,10 @@ function AutoFarm.new(manageRef)
 	self.collectiblesFolder.ChildAdded:Connect(function(item)
         local currentField = shared.main.currentField
         local inField = (item.Position - currentField.Position).Magnitude <= currentField.Size.Magnitude / 2
-        if item:IsA("BasePart") and not item:GetAttribute("Collected") and inField then
+        local decal = item:FindFirstChild("FrontDecal")
+        local assetId = decal and decal.Texture or nil 
+        local isCollectible = assetId and shared.main.tokenList[assetId] or false
+        if item:IsA("BasePart") and not item:GetAttribute("Collected") and inField and isCollectible then
             table.insert(self.itemQueue, item)
             self:sortItemQueue()
         end
