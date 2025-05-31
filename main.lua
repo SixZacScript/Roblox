@@ -1,5 +1,3 @@
----@diagnostic disable: undefined-global
-
 -- Services
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
