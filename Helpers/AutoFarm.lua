@@ -33,7 +33,6 @@ function AutoFarm.new(manageRef)
         end
     end)
 
-
 	self.collectiblesFolder.ChildRemoved:Connect(function(item)
 		for i, v in ipairs(self.itemQueue) do
 			if v == item then
@@ -42,9 +41,38 @@ function AutoFarm.new(manageRef)
 			end
 		end
 	end)
-    UserInputService.InputBegan:Connect(function(input, gameProcessed)
-        if not gameProcessed and input.KeyCode == Enum.KeyCode.E and self.converting then
-           self.converting = false
+    self.humanoid.Died:Connect(function()
+        self:stop()
+    end)
+    self.player.CharacterAdded:Connect(function(character)
+        self.character = character
+        self.rootPart = character:WaitForChild("HumanoidRootPart")
+        self.humanoid = character:WaitForChild("Humanoid")
+        task.wait(5)
+        self:start()
+    end)
+   UserInputService.InputBegan:Connect(function(input, gameProcessed)
+        if gameProcessed then return end
+
+        if input.KeyCode == Enum.KeyCode.E and self.converting then
+            self.converting = false
+        end
+
+        local movementKeys = {
+            [Enum.KeyCode.W] = true,
+            [Enum.KeyCode.A] = true,
+            [Enum.KeyCode.S] = true,
+            [Enum.KeyCode.D] = true,
+            [Enum.KeyCode.Space] = true,
+        }
+
+        if movementKeys[input.KeyCode] and self.autoFarm then
+            self:stop()
+            -- shared.Rayfield:Notify({
+            --     Title = "AutoFarm Stopped",
+            --     Content = "You have stopped the AutoFarm.",
+            --     Duration = 5,
+            -- })
         end
     end)
 	return self
@@ -139,7 +167,7 @@ function AutoFarm:moveToItem()
 	end
 end
 
-function AutoFarm:walkToPosition(pos)
+function AutoFarm:moveTo(pos)
 	self.humanoid:MoveTo(pos)
 	local timeout = 5
 	local startTime = tick()
@@ -175,7 +203,7 @@ function AutoFarm:runFarmLoop()
                 self:moveToItem()
             else
                 local target = self:getRandomPositionInField()
-                self:walkToPosition(target)
+                self:moveTo(target)
             end
         end
 		RunService.Heartbeat:Wait()
@@ -207,9 +235,12 @@ function AutoFarm:removeConnection(name)
 end
 
 function AutoFarm:stop()
-	self.autoFarm = false
-	self.converting = false
-    self:removeConnection("PollenCheck")
+    self.itemQueue = {}
+    self.autoFarm = false
+    self.converting = false
+    self:removeConnection("Heartbeat")
+    self:moveTo(self.rootPart.Position)
+    -- self.manageRef.farmTab.farmToggle:Set(false)
 end
 
 function AutoFarm:start()
@@ -217,8 +248,8 @@ function AutoFarm:start()
     self.autoFarm = true
     local targetPos = shared.main.currentField.Position + Vector3.new(0, 3, 0)
 
-    self:removeConnection("PollenCheck")
-    self:addConnection("PollenCheck", function()
+    self:removeConnection("Heartbeat")
+    self:addConnection("Heartbeat", function()
         if shared.main.Pollen >= shared.main.Capacity and not self.converting then
             self:convertPollen(function()
                 if self.autoFarm then
@@ -231,7 +262,6 @@ function AutoFarm:start()
     self:tweenTo(targetPos, function()
         self:runFarmLoop()
     end)
-
 end
 
 

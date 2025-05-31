@@ -64,8 +64,18 @@ function FarmTab.new(manageRef)
 			end
 		end
 	})
+  self.farmToggle = self.mainTab:CreateToggle({
+        Name = "Auto Farm",
+        CurrentValue = false,
+        Callback = function(value)
+            shared.main.autoFarm = value
+            if self.onAutoFarmToggle then
+                self.onAutoFarmToggle(value)
+            end
+        end
+    })
 
-    self.mainTab:CreateToggle({
+   self.mainTab:CreateToggle({
 		Name = "Auto Dig",
 		CurrentValue = false,
 		Callback = function(value)
@@ -80,17 +90,7 @@ function FarmTab.new(manageRef)
             end
 		end
 	})
-
-    self.farmToggle = self.mainTab:CreateToggle({
-        Name = "Auto Farm",
-        CurrentValue = false,
-        Callback = function(value)
-            shared.main.autoFarm = value
-            if self.onAutoFarmToggle then
-                self.onAutoFarmToggle(value)
-            end
-        end
-    })
+  
 	self.mainTab:CreateToggle({
         Name = "Farm Bubble",
         CurrentValue = false,
