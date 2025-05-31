@@ -11,6 +11,8 @@ function FarmingManager.new()
 	local DEBUG_MODE = true
 	local basePath = DEBUG_MODE and "BeeSwarm/" or "https://raw.githubusercontent.com/SixZacScript/Roblox/refs/heads/main/"
 	local loader = DEBUG_MODE and function(path) return loadstring(readfile(basePath .. path))() end or function(path) return loadstring(game:HttpGet(basePath .. path))() end
+	shared.Threads = loader("Classes/Threads.lua")
+	shared.Events = loader("Classes/Event.lua")
 
 	self.Window      = loader("Window.lua")
 	self.farmTab     = loader("Tabs/FarmTab.lua")
@@ -71,10 +73,13 @@ function FarmingManager:init()
 		end)
 	end
 
-	self.farmTab.onAutoFarmToggle = function(Enabled)
-		if not Enabled then self.botHelper:stop() return end
-		self.botHelper:start()
-	end
+	self.farmTab.onAutoFarmToggle:Connect(function(value)
+		if value then
+			self.botHelper:start()
+		else
+			self.botHelper:stop()
+		end
+	end)
 	self.farmTab.onFieldChange = function(field)
 		if self.botHelper.autoFarm then
 			self.botHelper:stop()
