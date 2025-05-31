@@ -89,7 +89,13 @@ function FarmTab.new(manageRef)
             end
         end
     })
-
+	self.mainTab:CreateToggle({
+        Name = "Farm Bubble",
+        CurrentValue = false,
+        Callback = function(value)
+            shared.main.farmBubble = value
+        end
+    })
     self.mainTab:CreateToggle({
         Name = "Anti-AFK",
         CurrentValue = true,

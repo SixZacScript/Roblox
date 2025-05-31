@@ -2,6 +2,7 @@ local TweenService = game:GetService("TweenService")
 local Players = game:GetService("Players")
 local WP  = game:GetService("Workspace")
 local CollectiblesFolder = WP:WaitForChild("Collectibles")
+local ParticlesFoler = WP:WaitForChild("Particles")
 
 local Bot = {}
 Bot.__index = Bot
@@ -143,7 +144,21 @@ function Bot:initItemListener()
             return distances[a] < distances[b]
         end)
     end
+    ParticlesFoler.ChildAdded:Connect(function(item)
+        local isBubble = item.Name == "Bubble"
+        if isBubble and shared.main.farmBubble then
+            table.insert(self.itemQueue, item)
+        end
+    end)
 
+    ParticlesFoler.ChildRemoved:Connect(function(item)
+        for i, v in ipairs(self.itemQueue) do
+            if v == item then
+                table.remove(self.itemQueue, i)
+                break
+            end
+        end
+    end)
     CollectiblesFolder.ChildAdded:Connect(function(item)
         local currentField = shared.main.currentField
         local inField = (item.Position - currentField.Position).Magnitude <= currentField.Size.Magnitude / 2
@@ -250,9 +265,16 @@ function Bot:farmAt()
 
     local function getRandomPositionInField()
         local halfSizeX, halfSizeZ = Field.Size.X/2, Field.Size.Z/2
-        local randomX = Field.Position.X + math.random(-halfSizeX + 5, halfSizeX - 5)
-        local randomZ = Field.Position.Z + math.random(-halfSizeZ + 5, halfSizeZ - 5)
-        return Vector3.new(randomX, Field.Position.Y + 3, randomZ)
+        local margin = 10 -- ระยะห่างจากขอบ
+        
+        local randomX = math.random(-halfSizeX + margin, halfSizeX - margin)
+        local randomZ = math.random(-halfSizeZ + margin, halfSizeZ - margin)
+        
+        return Vector3.new(
+            Field.Position.X + randomX,
+            Field.Position.Y + 3,
+            Field.Position.Z + randomZ
+        )
     end
 
     local function startPatrolling()
