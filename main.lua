@@ -83,7 +83,6 @@ function FarmingManager:init()
 			self.botHelper:start()
 		end
 	end
-	shared.hiveHelper = self.hiveHelper.new()
 end
 
 
