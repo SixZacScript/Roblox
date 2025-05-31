@@ -48,8 +48,6 @@ FarmTab.__index = FarmTab
 
 function FarmTab.new(manageRef)
     local self = setmetatable({}, FarmTab)
-    self.onAutoFarmToggle = shared.Event.new()
-
 	self:afk(true)
 	self.mainTab = manageRef.Window:CreateTab("Main", "flower")
     self.mainTab:CreateSection("Farming Zones")
@@ -71,7 +69,9 @@ function FarmTab.new(manageRef)
         CurrentValue = false,
         Callback = function(value)
             shared.main.autoFarm = value
-            self.onAutoFarmToggle:Fire(value)
+            if self.onAutoFarmToggle then
+                self.onAutoFarmToggle(value)
+            end
         end
     })
 

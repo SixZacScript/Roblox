@@ -11,8 +11,6 @@ function FarmingManager.new()
 	local DEBUG_MODE = true
 	local basePath = DEBUG_MODE and "BeeSwarm/" or "https://raw.githubusercontent.com/SixZacScript/Roblox/refs/heads/main/"
 	local loader = DEBUG_MODE and function(path) return loadstring(readfile(basePath .. path))() end or function(path) return loadstring(game:HttpGet(basePath .. path))() end
-	shared.Threads = loader("Classes/Threads.lua")
-	shared.Events = loader("Classes/Event.lua")
 
 	self.Window      = loader("Window.lua")
 	self.farmTab     = loader("Tabs/FarmTab.lua")
