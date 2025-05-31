@@ -79,7 +79,7 @@ function FarmingManager:init()
 		end
 	end)
 	self.farmTab.onFieldChange = function(field)
-		if self.botHelper.autoFarm then
+		if self.botHelper.autoFarm and not self.botHelper.converting then
 			self.botHelper:stop()
 			self.botHelper:start()
 		end
