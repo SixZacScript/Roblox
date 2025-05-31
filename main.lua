@@ -71,7 +71,7 @@ function FarmingManager:init()
 		end)
 	end
 
-	self.farmTab.onAutoFarmToggle:Connect(function(value)
+	self.farmTab.onAutoFarmToggle = (function(value)
 		if value then
 			self.botHelper:start()
 		else
