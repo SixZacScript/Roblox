@@ -35,4 +35,13 @@ function Bind.new()
 	})
 end
 
+function Bind:destroy()
+    if self.Keybind then
+        self.Keybind = nil
+    end
+    if self.GoToHaveKeybind then
+        self.GoToHaveKeybind = nil
+    end
+end
+
 return Bind

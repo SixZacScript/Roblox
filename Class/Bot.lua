@@ -1,173 +1,206 @@
--- Optimized and Efficient Bot Module
-local Workspace = game:GetService("Workspace")
-local TweenService = game:GetService("TweenService")
-local RunService = game:GetService("RunService")
+-- Config Module - External configuration for easy maintenance
+local Config = {
+    FIELD_PADDING = 5,
+    MOVEMENT_TWEEN_TIME = 1,
+    CONVERSION_DELAY = 5,
+    PRIORITY_CHECK_INTERVAL = 0.08,
+    REGULAR_CHECK_INTERVAL = 0.2,
+    MONSTER_JUMP_INTERVAL = 1.5,
+    MONSTER_DETECTION_RADIUS = 40,
+    MAX_NEARBY_COLLECTIBLES = 10,
+    MOVEMENT_TIMEOUT_BUFFER = 2,
+    COLLECTIBLE_Y_TOLERANCE = 3,
+    PRIORITY_MULTIPLIER = 5
+}
 
-local CollectiblesFolder = Workspace:WaitForChild("Collectibles")
-local ParticlesFolder = Workspace:WaitForChild("Particles")
+-- Services Cache
+local Services = {
+    Workspace = game:GetService("Workspace"),
+    TweenService = game:GetService("TweenService"),
+    RunService = game:GetService("RunService"),
+    ReplicatedStorage = game:GetService("ReplicatedStorage")
+}
 
-local Bot = {}
-Bot.__index = Bot
+-- Folder References
+local Folders = {
+    Collectibles = Services.Workspace:WaitForChild("Collectibles"),
+    Monsters = Services.Workspace:WaitForChild("Monsters"),
+    Particles = Services.Workspace:WaitForChild("Particles")
+}
 
-local FIELD_PADDING = 5
-local MOVEMENT_TWEEN_TIME = 1
-local CONVERSION_DELAY = 5
-local PRIORITY_CHECK_INTERVAL = 0.08
-local REGULAR_CHECK_INTERVAL = 0.2
+-- State Manager - Centralized state management
+local StateManager = {}
+StateManager.__index = StateManager
 
+function StateManager.new()
+    return setmetatable({
+        autoFarm = false,
+        converting = false,
+        killingMonster = false,
+        isMoving = false,
+        movingToCollectible = false,
+        lastField = nil,
+        lastPriorityCheck = 0,
+        lastRegularCheck = 0
+    }, StateManager)
+end
 
-function Bot.new()
-    local self = setmetatable({}, Bot)
-    self:destroy()
-
-    self.autoFarm = false
+function StateManager:reset()
     self.converting = false
-    self.farmThread = nil
-    self.collectibles = {}
-    self.nearbyCollectibles = {}
+    self.killingMonster = false
     self.isMoving = false
     self.movingToCollectible = false
-    self.currentMoveConnection = nil
-    self.lastPriorityCheck = 0
-    self.lastRegularCheck = 0
-
-    self:setupCollectiblesDetection()
-    self:setupRealtimeCheck()
-
-    return self
 end
 
-function Bot:setupRealtimeCheck()
-    self.lastField = shared.main.currentField
+-- Movement Manager - Handles all movement operations
+local MovementManager = {}
+MovementManager.__index = MovementManager
 
-    self.realtimeCheckConnection = RunService.Heartbeat:Connect(function()
-        if not self.autoFarm or self.converting then return end
-
-        local currentTime = tick()
-        if currentTime - self.lastPriorityCheck >= PRIORITY_CHECK_INTERVAL then
-            self.lastPriorityCheck = currentTime
-            self:cleanupNearby()
-            if #self.nearbyCollectibles > 0 and not self.movingToCollectible then
-                local bestCollectible = self:getBestNearbyCollectible()
-                if bestCollectible then
-                    self:cancelCurrentMovement()
-                    task.spawn(function()
-                        self:collectItem(bestCollectible)
-                    end)
-                    return
-                end
-            end
-        end
-
-        if currentTime - self.lastRegularCheck >= REGULAR_CHECK_INTERVAL then
-            self.lastRegularCheck = currentTime
-            if shared.main.currentField ~= self.lastField then
-                self.lastField = shared.main.currentField
-                self:cancelCurrentMovement()
-                self:clearCollectibles()
-                self:setupCollectiblesDetection()
-                self:returnToField()
-                return
-            end
-
-            if shared.hiveHelper and shared.hiveHelper:isPollenFull() then
-                self:cancelCurrentMovement()
-                task.spawn(function()
-                    self:convertPollen()
-                end)
-                return
-            end
-
-            if self.isMoving and not self.movingToCollectible and #self.nearbyCollectibles == 0 then
-                local nearestCollectible = self:getNearestCollectible()
-                if nearestCollectible then
-                    self:cancelCurrentMovement()
-                    task.spawn(function()
-                        self:collectItem(nearestCollectible)
-                    end)
-                end
-            end
-        end
-    end)
+function MovementManager.new(state)
+    return setmetatable({
+        state = state,
+        currentConnection = nil,
+        visualPart = nil
+    }, MovementManager)
 end
 
-function Bot:setupCollectiblesDetection()
-    local folders = { CollectiblesFolder, ParticlesFolder }
-    local shouldFarmBubble = shared.main.farmBubble
+function MovementManager:cancel()
+    if self.currentConnection then
+        self.currentConnection:Disconnect()
+        self.currentConnection = nil
+    end
+    shared.character.humanoid:MoveTo(shared.character.rootPart.Position)
+    self.state.isMoving = false
+    self.state.movingToCollectible = false
+    self:clearVisual()
+end
+
+function MovementManager:clearVisual()
+    if self.visualPart then
+        self.visualPart:Destroy()
+        self.visualPart = nil
+    end
+end
+
+function MovementManager:moveToAsync(position, isCollectible, item)
+    self:clearVisual()
+    if not self.state.autoFarm then return end
+
+    self.visualPart = shared.character:createBillboard(position, item and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0))
+    self.state.isMoving = true
+    self.state.movingToCollectible = isCollectible or false
     
-    -- Store connections separately to avoid modifying game objects
-    local touchedConnections = {}
-
-    local function shouldTrack(child)
-        return ((child.Name == "Bubble" and shouldFarmBubble) or child.Name == "C") and not child:GetAttribute("Collected")
+    shared.character.humanoid:MoveTo(position)
+    local timeout = (shared.character:getDistance(position) / math.max(shared.character.humanoid.WalkSpeed, 16)) + Config.MOVEMENT_TIMEOUT_BUFFER
+    local startTime = tick()
+    
+    self.currentConnection = shared.character.humanoid.MoveToFinished:Connect(function()
+        self:cancel()
+    end)
+    
+    while self.state.isMoving and self.state.autoFarm and not self.state.converting and shared.character:isValid() do
+        if tick() - startTime > timeout then
+            warn("Movement timed out")
+            self:cancel()
+            break
+        end
+        task.wait()
     end
-
-    local function getPriority(child)
-        return child.Name == "Bubble" and 0 or (child:GetAttribute("Priority") or 1)
+    
+    if item then
+        item:SetAttribute("Collected", true)
     end
+    self:clearVisual()
+end
 
-    local function isInField(child)
-        local currentField = shared.main.currentField
-        return currentField and (child.Position - currentField.Position).Magnitude <= currentField.Size.Magnitude / 2
+function MovementManager:tweenTo(position, onComplete, time)
+    local tween = Services.TweenService:Create(
+        shared.character.rootPart,
+        TweenInfo.new(time or Config.MOVEMENT_TWEEN_TIME, Enum.EasingStyle.Linear),
+        {CFrame = CFrame.new(position)}
+    )
+    tween:Play()
+    tween.Completed:Wait()
+    if onComplete then onComplete() end
+end
+
+-- Collectible Manager - Handles collectible detection and management
+local CollectibleManager = {}
+CollectibleManager.__index = CollectibleManager
+
+function CollectibleManager.new()
+    return setmetatable({
+        collectibles = {},
+        nearbyCollectibles = {},
+        touchedConnections = {}
+    }, CollectibleManager)
+end
+
+function CollectibleManager:clear()
+    self.collectibles = {}
+    self.nearbyCollectibles = {}
+    -- Disconnect all touched connections
+    for child, connection in pairs(self.touchedConnections) do
+        connection:Disconnect()
     end
+    self.touchedConnections = {}
+end
 
-    local function insertCollectible(child)
-        table.insert(self.collectibles, { part = child, priority = getPriority(child) })
-    end
+function CollectibleManager:shouldTrack(child)
+    local shouldFarmBubble = shared.main.farmBubble ~= false
+    return ((child.Name == "Bubble" and shouldFarmBubble) or child.Name == "C") 
+           and not child:GetAttribute("Collected")
+end
 
-    local function disconnectTouchedConnection(child)
-        if touchedConnections[child] then
-            touchedConnections[child]:Disconnect()
-            touchedConnections[child] = nil
+function CollectibleManager:isValidCollectible(child)
+    local field = shared.main.currentField
+    if not field then return false end
+    
+    local distance = (child.Position - field.Position).Magnitude
+    local yDifference = math.abs(child.Position.Y - shared.character.rootPart.Position.Y)
+    
+    return distance <= field.Size.Magnitude / 2 and yDifference <= Config.COLLECTIBLE_Y_TOLERANCE
+end
+
+function CollectibleManager:getTokenData(child)
+    if child.Name == "C" then
+        local decal = child:FindFirstChild("FrontDecal")
+        if decal and decal:IsA("Decal") then
+            local id = tonumber(decal.Texture:match("rbxassetid://(%d+)"))
+            return shared.Tokens:getTokenById(id)
         end
     end
+    return child.Name, { id = -1, isSkill = false, priority = 1 }
+end
 
-    for _, folder in ipairs(folders) do
-        for _, child in ipairs(folder:GetChildren()) do
-            if shouldTrack(child) and isInField(child) then
-                insertCollectible(child)
+function CollectibleManager:addCollectible(child)
+    local _, data = self:getTokenData(child)
+    table.insert(self.collectibles, {
+        part = child,
+        priority = data and data.priority or 10
+    })
+end
+
+function CollectibleManager:removeCollectible(collectible)
+    for _, list in ipairs({self.collectibles, self.nearbyCollectibles}) do
+        for i = #list, 1, -1 do
+            if list[i].part == collectible then
+                table.remove(list, i)
             end
         end
-
-        folder.ChildAdded:Connect(function(child)
-            if not shouldTrack(child) then return end
-
-            local function onTouched(hit)
-                if hit and hit:IsDescendantOf(shared.character.character) and not child:GetAttribute("Collected") then
-                    child:SetAttribute("Collected", true)
-                    self:removeCollectibleFromTable(child)
-                    disconnectTouchedConnection(child)
-                end
-            end
-
-            if isInField(child) then
-                insertCollectible(child)
-                
-                -- Check if the child is a BasePart before connecting to Touched
-                if child:IsA("BasePart") then
-                    touchedConnections[child] = child.Touched:Connect(onTouched)
-                end
-
-                local priority = getPriority(child)
-                local distance = (self:getCollectiblePosition(child) - shared.character.rootPart.Position).Magnitude
-                if self.autoFarm and not self.converting then
-                    if priority >= 3 or distance <= 10 then
-                        self:cancelCurrentMovement()
-                        self:collectItem(child)
-                    end
-                end
-            end
-        end)
-
-        folder.ChildRemoved:Connect(function(child)
-            self:removeCollectibleFromTable(child)
-            disconnectTouchedConnection(child)
-        end)
     end
 end
 
-
-function Bot:cleanupNearby()
+function CollectibleManager:cleanup()
+    -- Clean collectibles
+    for i = #self.collectibles, 1, -1 do
+        local item = self.collectibles[i]
+        if not item.part or not item.part.Parent or item.part:GetAttribute("Collected") then
+            table.remove(self.collectibles, i)
+        end
+    end
+    
+    -- Clean nearby collectibles
     for i = #self.nearbyCollectibles, 1, -1 do
         local item = self.nearbyCollectibles[i]
         if not item.part or not item.part.Parent then
@@ -176,12 +209,14 @@ function Bot:cleanupNearby()
     end
 end
 
-function Bot:getBestNearbyCollectible()
-    self:cleanupNearby()
+function CollectibleManager:getBestNearby()
+    self:cleanup()
     local best, bestScore = nil, math.huge
-    for i = 1, math.min(#self.nearbyCollectibles, 10) do
+    local maxCheck = math.min(#self.nearbyCollectibles, Config.MAX_NEARBY_COLLECTIBLES)
+    
+    for i = 1, maxCheck do
         local item = self.nearbyCollectibles[i]
-        local score = item.distance - (item.priority * 5)
+        local score = item.distance - (item.priority * Config.PRIORITY_MULTIPLIER)
         if score < bestScore then
             bestScore = score
             best = item.part
@@ -190,152 +225,326 @@ function Bot:getBestNearbyCollectible()
     return best
 end
 
-function Bot:cancelCurrentMovement()
-    if self.currentMoveConnection then
-        self.currentMoveConnection:Disconnect()
-        self.currentMoveConnection = nil
+function CollectibleManager:getNearest()
+    self:cleanup()
+    
+    -- Sort by priority and distance
+    table.sort(self.collectibles, function(a, b)
+        if a.priority == b.priority then
+            return self:getDistance(a.part) < self:getDistance(b.part)
+        else
+            return a.priority > b.priority
+        end
+    end)
+    
+    for _, item in ipairs(self.collectibles) do
+        if item.part and item.part.Parent then
+            return item.part
+        end
     end
-    shared.character.humanoid:MoveTo(shared.character.rootPart.Position)
-    self.isMoving = false
-    self.movingToCollectible = false
-    if self.VisualPart then self.VisualPart:Destroy() self.VisualPart = nil end
+    return nil
 end
 
-function Bot:getNearestCollectible()
-    for i = #self.collectibles, 1, -1 do
-        local item = self.collectibles[i]
-        if not item.part or not item.part.Parent or (item and item.part and item.part:GetAttribute("Collected")) then
-            table.remove(self.collectibles, i)
-        end
-    end
+function CollectibleManager:getDistance(collectible)
+    local pos = collectible:IsA("Model") and collectible:GetPivot().Position or collectible.Position
+    return (shared.character.rootPart.Position - pos).Magnitude
+end
 
-    local best, bestScore = nil, math.huge
-    for i = 1, #self.collectibles do
-        local item = self.collectibles[i]
-        local score = self:getDistanceToCollectible(item.part) - (item.priority * 10)
-        if score < bestScore  then
-            bestScore = score
-            best = item.part
+function CollectibleManager:getPosition(collectible)
+    return collectible:IsA("Model") and collectible:GetPivot().Position or collectible.Position
+end
+
+-- Monster Manager - Handles monster detection and combat
+local MonsterManager = {}
+MonsterManager.__index = MonsterManager
+
+function MonsterManager.new(state)
+    return setmetatable({
+        state = state,
+        monsters = {},
+        jumpConnection = nil
+    }, MonsterManager)
+end
+
+function MonsterManager:setup()
+    -- Monster tracking
+    Folders.Monsters.ChildAdded:Connect(function(monsterModel)
+        if not monsterModel:IsA("Model") then return end
+        
+        task.delay(0.1, function()
+            local humanoid = monsterModel:FindFirstChild("Humanoid")
+            local target = monsterModel:FindFirstChild("Target")
+            
+            if humanoid and target and target:IsA("ObjectValue") and target.Value == shared.character.character then
+                self.monsters[monsterModel] = humanoid
+            end
+        end)
+    end)
+    
+    Folders.Monsters.ChildRemoved:Connect(function(monsterModel)
+        self.monsters[monsterModel] = nil
+    end)
+    
+    -- Monster combat loop
+    self.jumpConnection = Services.RunService.Heartbeat:Connect(function()
+        if self.state.autoFarm and not self.state.converting and not self.state.killingMonster then
+            local monster = self:getClosest(Config.MONSTER_DETECTION_RADIUS)
+            if monster then
+                self:startCombat(monster)
+            end
+        end
+    end)
+end
+
+function MonsterManager:getClosest(maxRadius)
+    local closest, shortestDistance = nil, math.huge
+    local myPosition = shared.character.rootPart.Position
+    
+    for monsterModel, humanoid in pairs(self.monsters) do
+        if humanoid and humanoid.Health > 0 and monsterModel.PrimaryPart then
+            local distance = (monsterModel.PrimaryPart.Position - myPosition).Magnitude
+            if distance < shortestDistance and distance <= maxRadius then
+                shortestDistance = distance
+                closest = monsterModel
+            end
         end
     end
-    return best
+    return closest
+end
+
+function MonsterManager:isAlive(monsterModel)
+    local humanoid = self.monsters[monsterModel]
+    return humanoid and humanoid.Health > 0
+end
+
+function MonsterManager:startCombat(monster)
+    self.state.killingMonster = true
+    
+    task.spawn(function()
+        local humanoid = shared.character.humanoid
+        humanoid.JumpPower = 50
+        local lastJump = tick()
+        humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+        
+        while self.state.autoFarm and self:isAlive(monster) do
+            if tick() - lastJump >= Config.MONSTER_JUMP_INTERVAL then
+                humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+                lastJump = tick()
+            end
+            task.wait(0.1)
+        end
+        
+        self.state.killingMonster = false
+        humanoid.JumpPower = shared.main.defaultJumpPower
+    end)
+end
+
+function MonsterManager:destroy()
+    if self.jumpConnection then
+        self.jumpConnection:Disconnect()
+        self.jumpConnection = nil
+    end
+end
+
+-- Main Bot Class - Simplified main controller
+local Bot = {}
+Bot.__index = Bot
+
+function Bot.new()
+    local self = setmetatable({}, Bot)
+    
+    -- Initialize managers
+    self.state = StateManager.new()
+    self.movement = MovementManager.new(self.state)
+    self.collectibles = CollectibleManager.new()
+    self.monsters = MonsterManager.new(self.state)
+    
+    -- Initialize connections
+    self.connections = {}
+    self.farmThread = nil
+    
+    self:setup()
+    return self
+end
+
+function Bot:setup()
+    self.monsters:setup()
+    self:setupCollectibles()
+    self:setupRealtimeCheck()
+end
+
+function Bot:setupCollectibles()
+    local folders = {Folders.Collectibles, Folders.Particles}
+    
+    for _, folder in ipairs(folders) do
+        -- Process existing children
+        for _, child in ipairs(folder:GetChildren()) do
+            if self.collectibles:shouldTrack(child) and self.collectibles:isValidCollectible(child) then
+                self.collectibles:addCollectible(child)
+            end
+        end
+        
+        -- Setup event connections
+        self.connections[#self.connections + 1] = folder.ChildAdded:Connect(function(child)
+            if not self.collectibles:shouldTrack(child) then return end
+            
+            if self.collectibles:isValidCollectible(child) then
+                self.collectibles:addCollectible(child)
+                
+                if child:IsA("BasePart") then
+                    self.collectibles.touchedConnections[child] = child.Touched:Connect(function(hit)
+                        if hit and hit:IsDescendantOf(shared.character.character) and not child:GetAttribute("Collected") then
+                            child:SetAttribute("Collected", true)
+                            self.collectibles:removeCollectible(child)
+                        end
+                    end)
+                end
+            end
+        end)
+        
+        self.connections[#self.connections + 1] = folder.ChildRemoved:Connect(function(child)
+            self.collectibles:removeCollectible(child)
+            if self.collectibles.touchedConnections[child] then
+                self.collectibles.touchedConnections[child]:Disconnect()
+                self.collectibles.touchedConnections[child] = nil
+            end
+        end)
+    end
+end
+
+function Bot:setupRealtimeCheck()
+    self.state.lastField = shared.main.currentField
+    
+    self.connections[#self.connections + 1] = Services.RunService.Heartbeat:Connect(function()
+        if not self.state.autoFarm or self.state.converting then return end
+        
+        local currentTime = tick()
+        
+        -- Priority checks (nearby collectibles)
+        if currentTime - self.state.lastPriorityCheck >= Config.PRIORITY_CHECK_INTERVAL then
+            self.state.lastPriorityCheck = currentTime
+            
+            if #self.collectibles.nearbyCollectibles > 0 and not self.state.movingToCollectible then
+                local best = self.collectibles:getBestNearby()
+                if best then
+                    self:collectItem(best)
+                    return
+                end
+            end
+        end
+        
+        -- Regular checks
+        if currentTime - self.state.lastRegularCheck >= Config.REGULAR_CHECK_INTERVAL then
+            self.state.lastRegularCheck = currentTime
+            
+            -- Field change detection
+            if shared.main.currentField ~= self.state.lastField then
+                self.state.lastField = shared.main.currentField
+                self:handleFieldChange()
+                return
+            end
+            
+            -- Pollen conversion check
+            if shared.hiveHelper and shared.hiveHelper:isPollenFull() then
+                self:convertPollen()
+                return
+            end
+            
+            -- Movement optimization
+            if self.state.isMoving and not self.state.movingToCollectible and #self.collectibles.nearbyCollectibles == 0 then
+                local nearest = self.collectibles:getNearest()
+                if nearest then
+                    self:collectItem(nearest)
+                end
+            end
+        end
+    end)
+end
+
+function Bot:handleFieldChange()
+    self.movement:cancel()
+    self.collectibles:clear()
+    self:setupCollectibles()
+    self:returnToField()
 end
 
 function Bot:collectItem(collectible)
     if not collectible or not collectible.Parent then return end
-    local pos = self:getCollectiblePosition(collectible)
-
-    self:moveToAsync(pos, true, collectible)
-
-end
-
-function Bot:getCollectiblePosition(collectible)
-    return collectible:IsA("Model") and collectible:GetPivot().Position or collectible.Position
-end
-
-function Bot:getDistanceToCollectible(collectible)
-    return (shared.character.rootPart.Position - self:getCollectiblePosition(collectible)).Magnitude
-end
-
-function Bot:removeCollectibleFromTable(collectible)
-    for _, list in ipairs({ self.collectibles, self.nearbyCollectibles }) do
-        for _, item in ipairs(list) do
-            if item.part == collectible then
-                item.part = nil
-                break
-            end
-        end
-    end
-end
-
-function Bot:tweenTo(position, onComplete)
-    local tween = TweenService:Create(shared.character.rootPart, TweenInfo.new(MOVEMENT_TWEEN_TIME, Enum.EasingStyle.Linear), {CFrame = CFrame.new(position)})
-    tween:Play()
-    tween.Completed:Wait()
-    if onComplete then onComplete() end
-end
-
-function Bot:moveToAsync(position, isCollectible, item)
-    if self.VisualPart then self.VisualPart:Destroy() end
-    if not self.autoFarm then return end
-    self.isMoving = true
-    self.movingToCollectible = isCollectible or false
-
-    shared.character.humanoid:MoveTo(position)
-    local startTime, timeout = tick(), (shared.character:getDistance(position) / (shared.character.humanoid.WalkSpeed > 0 and shared.character.humanoid.WalkSpeed or 16)) + 2
-
-    self.currentMoveConnection = shared.character.humanoid.MoveToFinished:Connect(function()
-        if self.currentMoveConnection then self.currentMoveConnection:Disconnect() self.currentMoveConnection = nil end
-        self.isMoving = false
-        self.movingToCollectible = false
-    end)
-    local color = item and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
-    self.VisualPart = shared.character:createBillboard(position, color)
-
-    while self.isMoving and self.autoFarm and not self.converting and shared.character:isValid() do
-        if tick() - startTime > timeout then
-            warn("Movement timed out")
-            if self.currentMoveConnection then self.currentMoveConnection:Disconnect() self.currentMoveConnection = nil end
-            self.isMoving = false
-            self.movingToCollectible = false
-            break
-        end
-        task.wait()
-    end
-    if item then 
-        item:SetAttribute("Collected",true)
-    end
-    if self.VisualPart then self.VisualPart:Destroy() end
-end
-
-function Bot:getRandomPositionInField()
-    local field = shared.main.currentField
-    if not field then return shared.character.rootPart.Position end
-    local size, center = field.Size, field.Position
-    local padding, y = FIELD_PADDING + 10, shared.character.rootPart.Position.Y
-    local x = center.X + math.random(-size.X / 2 + padding, size.X / 2 - padding)
-    local z = center.Z + math.random(-size.Z / 2 + padding, size.Z / 2 - padding)
-    return Vector3.new(x, y, z)
+    
+    self.movement:cancel()
+    local pos = self.collectibles:getPosition(collectible)
+    self.movement:moveToAsync(pos, true, collectible)
 end
 
 function Bot:convertPollen()
-    if self.converting then return end
-    self.converting = true
-    self:cancelCurrentMovement()
-    shared.hiveHelper:gotoHive(function()
-        task.wait(1)
-        game:GetService("ReplicatedStorage").Events.PlayerHiveCommand:FireServer("ToggleHoneyMaking")
-        while shared.hiveHelper.PollenValue > 0 and self.autoFarm and self.converting do task.wait(0.2) end
-        task.wait(CONVERSION_DELAY)
-        self.converting = false
-        if self.autoFarm then task.spawn(function() self:returnToField() end) end
+    if self.state.converting then return end
+    
+    self.state.converting = true
+    self.movement:cancel()
+    
+    task.spawn(function()
+        shared.hiveHelper:gotoHive(function()
+            task.wait(1)
+            Services.ReplicatedStorage.Events.PlayerHiveCommand:FireServer("ToggleHoneyMaking")
+            
+            while shared.hiveHelper.PollenValue > 0 and self.state.autoFarm and self.state.converting do
+                task.wait(0.2)
+            end
+            
+            task.wait(Config.CONVERSION_DELAY)
+            self.state.converting = false
+            
+            if self.state.autoFarm then
+                self:returnToField()
+            end
+        end)
     end)
 end
 
 function Bot:returnToField(onComplete)
-    if not self.autoFarm then return end
+    if not self.state.autoFarm then return end
+    
     if not shared.character:isPlayerInField() and shared.main.currentField then
         local fieldPos = shared.main.currentField.Position + Vector3.new(0, 3, 0)
-        pcall(function() self:tweenTo(fieldPos, onComplete) end)
+        pcall(function()
+            self.movement:tweenTo(fieldPos, onComplete)
+        end)
     elseif onComplete then
         onComplete()
     end
 end
 
-function Bot:farmInField()
-    while self.autoFarm do
-        local isInField = shared.character:isPlayerInField(shared.main.currentField)
+function Bot:getRandomFieldPosition()
+    local field = shared.main.currentField
+    if not field then return shared.character.rootPart.Position end
+    
+    local size, center = field.Size, field.Position
+    local padding = Config.FIELD_PADDING + 10
+    local y = shared.character.rootPart.Position.Y
+    
+    local x = center.X + math.random(-size.X / 2 + padding, size.X / 2 - padding)
+    local z = center.Z + math.random(-size.Z / 2 + padding, size.Z / 2 - padding)
+    
+    return Vector3.new(x, y, z)
+end
+
+function Bot:farmLoop()
+    while self.state.autoFarm do
         if shared.hiveHelper and shared.hiveHelper:isPollenFull() then
             self:convertPollen()
-            while self.converting and self.autoFarm do task.wait(0.1) end
-            if not self.autoFarm then break end
+            while self.state.converting and self.state.autoFarm do
+                task.wait(0.1)
+            end
+            if not self.state.autoFarm then break end
         end
-        if isInField then 
-            local nearest = self:getNearestCollectible()
-            if nearest then 
+        
+        if shared.character:isPlayerInField(shared.main.currentField) and not self.state.killingMonster then
+            local nearest = self.collectibles:getNearest()
+            print(nearest)
+            if nearest then
                 self:collectItem(nearest)
-            else 
-                self:moveToAsync(self:getRandomPositionInField(), false)
+            else
+                self.movement:moveToAsync(self:getRandomFieldPosition(), false)
             end
         end
         
@@ -344,41 +553,66 @@ function Bot:farmInField()
 end
 
 function Bot:start()
-    if self.autoFarm then return end
-    self.autoFarm = true
-    local isInField = shared.character:isPlayerInField(shared.main.currentField)
+    if self.state.autoFarm then return end
+    
+    self.state.autoFarm = true
+    
     self.farmThread = task.spawn(function()
-        shared.Rayfield:Notify({ Title = "Notification", Content = "Auto Farm has been started.", Duration = 6.5 })
+        shared.Rayfield:Notify({
+            Title = "Notification",
+            Content = "Auto Farm has been started.",
+            Duration = 3
+        })
+        
         if shared.hiveHelper and shared.hiveHelper:isPollenFull() then
             self:convertPollen()
-            while self.converting and self.autoFarm do task.wait(0.1) end
+            while self.state.converting and self.state.autoFarm do
+                task.wait(0.1)
+            end
         end
-        if self.autoFarm and not isInField then
-            self:returnToField(function() self:farmInField() end)
-        else
-            self:farmInField()
+        
+        if self.state.autoFarm then
+            if not shared.character:isPlayerInField(shared.main.currentField) then
+                self:returnToField(function()
+                    self:farmLoop()
+                end)
+            else
+                self:farmLoop()
+            end
         end
     end)
 end
 
 function Bot:stop()
-    self.autoFarm = false
-    if self.VisualPart then self.VisualPart:Destroy() self.VisualPart = nil end
-    self:cancelCurrentMovement()
-    if self.farmThread then task.cancel(self.farmThread) self.farmThread = nil end
-    self.converting = false
-    shared.Rayfield:Notify({ Title = "Notification", Content = "Auto Farm has been stopped.", Duration = 6.5 })
-end
-
-function Bot:clearCollectibles()
-    self.collectibles = {}
-    self.nearbyCollectibles = {}
+    self.state.autoFarm = false
+    self.movement:cancel()
+    
+    if self.farmThread then
+        task.cancel(self.farmThread)
+        self.farmThread = nil
+    end
+    
+    self.state:reset()
+    
+    shared.Rayfield:Notify({
+        Title = "Notification",
+        Content = "Auto Farm has been stopped.",
+        Duration = 3
+    })
 end
 
 function Bot:destroy()
     self:stop()
-    if self.realtimeCheckConnection then self.realtimeCheckConnection:Disconnect() self.realtimeCheckConnection = nil end
-    self:clearCollectibles()
+    
+    -- Disconnect all connections
+    for _, connection in ipairs(self.connections) do
+        connection:Disconnect()
+    end
+    self.connections = {}
+    
+    -- Destroy managers
+    self.monsters:destroy()
+    self.collectibles:clear()
 end
 
 return Bot

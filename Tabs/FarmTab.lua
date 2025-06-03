@@ -60,19 +60,19 @@ function FarmTab.new()
             -- Handle both string and table inputs
             local selectedLabel = type(label) == "table" and label[1] or label
             local key = getFieldName(selectedLabel)
-
-            if key then
-                self.selectedZone = key
-                shared.main.currentField = shared.FlowerZones:FindFirstChild(key)
-                if shared.main.autoFarm then
+            task.spawn(function()
+                if key then
+                    self.selectedZone = key
+                    shared.main.currentField = shared.FlowerZones:FindFirstChild(key)
                     while shared.botHelper.converting do
                         task.wait()
                     end
-                    
-                    shared.botHelper:stop()
-                    shared.botHelper:start()
+                    if shared.botHelper.autoFarm then
+                        shared.botHelper:stop()
+                        shared.botHelper:start()
+                    end
                 end
-            end
+            end)
         end
     })
 
@@ -127,4 +127,20 @@ function FarmTab:afk(value)
 	end
 	
 end
+
+function FarmTab:destroy()
+    if self.afkConnection then
+        self.afkConnection:Disconnect()
+        self.afkConnection = nil
+    end
+    if self.FlowerDropdown then
+        self.FlowerDropdown:Destroy()
+        self.FlowerDropdown = nil
+    end
+    if self.farmToggle then
+        self.farmToggle:Destroy()
+        self.farmToggle = nil
+    end
+end
+
 return FarmTab

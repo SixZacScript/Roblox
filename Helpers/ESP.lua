@@ -1,13 +1,15 @@
 local Workspace = game:GetService("Workspace")
 local RunService = game:GetService("RunService")
 
-
 local HiddenStickersFolder = Workspace:WaitForChild("HiddenStickers")
 local ParticlesFolder = Workspace:WaitForChild("Particles")
+local HappeningsFolder = Workspace:WaitForChild("Happenings")
+local PuffshroomsFolder = HappeningsFolder:WaitForChild("Puffshrooms")
 local WTsFolder = ParticlesFolder:WaitForChild("WTs")
 
 local ESPModule = {}
 ESPModule.Billboards = {}
+ESPModule.ShowLines = true
 
 local function createBillboard(part)
     local billboard = Instance.new("BillboardGui")
@@ -24,10 +26,9 @@ local function createBillboard(part)
         imageLabel.Position = UDim2.new(0, 0, 0, 0)
         imageLabel.BackgroundTransparency = 1
         imageLabel.ScaleType = Enum.ScaleType.Fit
-        imageLabel.Parent = billboard
         imageLabel.Image = decal.Texture
+        imageLabel.Parent = billboard
     end
-    
 
     local textLabel = Instance.new("TextLabel")
     textLabel.Size = UDim2.new(1, 0, 0.3, 0)
@@ -44,14 +45,39 @@ local function createBillboard(part)
     return billboard, textLabel
 end
 
+local function createLineAttachment(part)
+    local attachment = Instance.new("Attachment")
+    attachment.Parent = part
+    return attachment
+end
+
 function ESPModule:AddESP(part, originFolder)
     if not part:IsA("BasePart") then return end
     if self.Billboards[part] then return end
 
     local billboard, label = createBillboard(part)
+    local partAttachment, charAttachment, beam
+
+    if self.ShowLines then
+        partAttachment = createLineAttachment(part)
+        charAttachment = createLineAttachment(shared.character.rootPart)
+
+        beam = Instance.new("Beam")
+        beam.Attachment0 = charAttachment
+        beam.Attachment1 = partAttachment
+        beam.Width0 = 0.1
+        beam.Width1 = 0.1
+        beam.Color = ColorSequence.new(Color3.fromRGB(0, 255, 0))
+        beam.FaceCamera = true
+        beam.Parent = part
+    end
+
     self.Billboards[part] = {
         billboard = billboard,
         label = label,
+        beam = beam,
+        charAttachment = charAttachment,
+        partAttachment = partAttachment,
         origin = originFolder
     }
 end
@@ -79,7 +105,6 @@ function ESPModule:Enable()
         table.insert(self.childAddedConnections, conn)
     end
 
-
     self.updateConnection = RunService.RenderStepped:Connect(function()
         for part, data in pairs(self.Billboards) do
             if part and part.Parent then
@@ -94,8 +119,6 @@ function ESPModule:Enable()
             end
         end
     end)
-
-
 
     return self
 end
@@ -114,12 +137,16 @@ function ESPModule:Disable()
     end
 
     for _, data in pairs(self.Billboards) do
-        if data.billboard then
-            data.billboard:Destroy()
-        end
+        if data.billboard then data.billboard:Destroy() end
+        if data.beam then data.beam:Destroy() end
+        if data.charAttachment then data.charAttachment:Destroy() end
+        if data.partAttachment then data.partAttachment:Destroy() end
     end
     self.Billboards = {}
 end
 
+function ESPModule:ToggleLines(enabled)
+    self.ShowLines = enabled
+end
 
 return ESPModule

@@ -70,7 +70,7 @@ function Character:createBillboard(pos, color)
     local label = Instance.new("TextLabel")
     label.Size = UDim2.new(1, 0, 1, 0)
     label.BackgroundTransparency = 1
-    label.TextColor3 = Color3.fromRGB(255, 255, 255)
+    label.TextColor3 = Color3.fromRGB(255, 251, 0)
     label.TextScaled = true
     label.Text = ""
     label.Parent = billboard
