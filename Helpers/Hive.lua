@@ -1,25 +1,48 @@
 local TweenService = game:GetService("TweenService")
-local Players = game:GetService("Players")
 local HiveHelper = {}
 HiveHelper.__index = HiveHelper
 
 function HiveHelper.new()
     local self = setmetatable({}, HiveHelper)
     self.Hive = self:getHive()
+
+    self.CoreStats = shared.character.CoreStats
+    self.PollenValue =  self.CoreStats.Pollen.Value
+    self.HoneyValue = self.CoreStats.Honey.Value
+    self.CapacityValue = self.CoreStats.Capacity.Value
+    self:setupStatsConnection()
     return self
 end
-function HiveHelper:getPlayerCharacter()
-    local player = Players.LocalPlayer
-    local character = player.Character or player.CharacterAdded:Wait()
-    self.character = character
-    return character
+function HiveHelper:setupStatsConnection()
+    local CoreStats = shared.character.CoreStats
+    local Pollen = CoreStats:WaitForChild("Pollen")
+    local Capacity = CoreStats:WaitForChild("Capacity")
+    local Honey = CoreStats:WaitForChild("Honey")
+
+    self._connections = self._connections or {}
+
+    local function bindStat(statName, statObject)
+        self[statName .. "Value"] = statObject.Value
+        self._connections[statName] = statObject.Changed:Connect(function(val)
+            self[statName .. "Value"] = val
+        end)
+    end
+
+    bindStat("Pollen", Pollen)
+    bindStat("Capacity", Capacity)
+    bindStat("Honey", Honey)
+end
+
+function HiveHelper:isPollenFull()
+    return self.PollenValue >= self.CapacityValue
 end
 function HiveHelper:getHive()
-    local LocalPlayer = Players.LocalPlayer
-    local playerCharacter = self:getPlayerCharacter()
+    print("Searching for Hive...")
+    local LocalPlayer = shared.character.localPlayer
+    local playerCharacter = shared.character.character
     local honeycombs = workspace.Honeycombs:GetChildren()
 
-    -- First: check if player already owns a hive
+    -- First, check if already has hive
     for _, hive in ipairs(honeycombs) do
         local owner = hive:FindFirstChild("Owner")
         if owner and owner.Value == LocalPlayer then
@@ -28,22 +51,48 @@ function HiveHelper:getHive()
         end
     end
 
-    -- Third: fallback to finding the nearest hive and try to claim it
-    local closestHive, closestDist, closestIndex = nil, math.huge, nil
-    for i, hive in ipairs(honeycombs) do
-        local Base = hive and hive:FindFirstChild("patharrow") and hive.patharrow:FindFirstChild("Base")
+    -- Find the nearest unclaimed hive
+    local closestHive, closestDist = nil, math.huge
+    for _, hive in ipairs(honeycombs) do
+        local base = hive:FindFirstChild("patharrow") and hive.patharrow:FindFirstChild("Base")
         local owner = hive:FindFirstChild("Owner")
-        local dist = (playerCharacter.HumanoidRootPart.Position - Base.Position).Magnitude
-        if dist < closestDist and (owner and not owner.Value) then
-            closestHive = hive
-            closestDist = dist
-            closestIndex = i
+        if base and (not owner or not owner.Value) then
+            local dist = (shared.character.rootPart.Position - base.Position).Magnitude
+            if dist < closestDist then
+                closestHive = hive
+                closestDist = dist
+            end
         end
     end
 
-    if closestIndex then
-        game:GetService("ReplicatedStorage").Events.ClaimHive:FireServer(closestIndex)
-        self.Hive = closestHive
+    -- Function to retry hive claim
+    local function tryClaimHive(hive)
+        local basePos = hive.patharrow.Base.Position + Vector3.new(0, 3, 0)
+        shared.character:tweenTo(basePos, function()
+            task.wait(0.2)
+            local VirtualInputManager = game:GetService("VirtualInputManager")
+            VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
+            VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
+
+            -- Recheck after delay
+            task.delay(0.5, function()
+                for _, hive in ipairs(workspace.Honeycombs:GetChildren()) do
+                    local owner = hive:FindFirstChild("Owner")
+                    if owner and owner.Value == LocalPlayer then
+                        self.Hive = hive
+                        print("Hive claimed successfully.")
+                        return
+                    end
+                end
+                print("Hive claim failed. Retrying...")
+                self:getHive() -- Retry if still not claimed
+            end)
+        end)
+    end
+
+    -- Try to claim the hive
+    if closestHive then
+        tryClaimHive(closestHive)
         return closestHive
     end
 
@@ -57,29 +106,15 @@ function HiveHelper:gotoHive(onComplete)
         warn("Base not found in patharrow")
         return self:gotoHive(onComplete)
     end
-    self:tweenTo(Base.Position + Vector3.new(0, 3, 0), onComplete)
+    shared.character:tweenTo(Base.Position + Vector3.new(0, 3, 0), onComplete)
 end
 
-function HiveHelper:tweenTo(targetPos, callback)
-    local playerCharacter = self:getPlayerCharacter()
-    local rootPart = playerCharacter:FindFirstChild("HumanoidRootPart")
-    
-	local tweenInfo = TweenInfo.new(1, Enum.EasingStyle.Linear)
-	local tween = TweenService:Create(rootPart, tweenInfo, {CFrame = CFrame.new(targetPos)})
-
-	tween:Play()
-	tween.Completed:Connect(function()
-		if callback then callback() end
-	end)
-end
-function HiveHelper:getBaseDistance()
-    local Hive = self.Hive 
-    local Base = Hive and Hive:FindFirstChild("patharrow") and Hive.patharrow:FindFirstChild("Base")
-    local playerCharacter = self:getPlayerCharacter()
-    local rootPart = playerCharacter:FindFirstChild("HumanoidRootPart")
-    local basePos = Vector3.new(Base.Position.X, rootPart.Position.Y, Base.Position.Z)
-    local dist = Base and (playerCharacter.HumanoidRootPart.Position - basePos).Magnitude or math.huge
-
-    return dist
+function HiveHelper:removeAllConnections()
+    if self._connections then
+        for _, conn in pairs(self._connections) do
+            if conn.Disconnect then conn:Disconnect() end
+        end
+        self._connections = {}
+    end
 end
 return HiveHelper

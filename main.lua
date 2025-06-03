@@ -1,91 +1,80 @@
--- Services
+local WP = game:GetService("Workspace")
 local Players = game:GetService("Players")
-local Workspace = game:GetService("Workspace")
+local FieldDecosFolder = WP:WaitForChild("FieldDecos")
+local DecorationsFolder = WP:WaitForChild("Decorations")
 
--- FarmingManager Class
+shared.FlowerZones = WP:WaitForChild("FlowerZones")
+shared.FlowerZones = WP:WaitForChild("FlowerZones")
+
 local FarmingManager = {}
 FarmingManager.__index = FarmingManager
-
 function FarmingManager.new()
-	local self = setmetatable({}, FarmingManager)
-	local DEBUG_MODE = true
-	local basePath = DEBUG_MODE and "BeeSwarm/" or "https://raw.githubusercontent.com/SixZacScript/Roblox/refs/heads/main/"
-	local loader = DEBUG_MODE and function(path) return loadstring(readfile(basePath .. path))() end or function(path) return loadstring(game:HttpGet(basePath .. path))() end
+    local self = setmetatable({}, FarmingManager)
+    shared.Rayfield = loadstring(readfile("NewBee/Data/Rayfield.lua"))()
 
-	self.Window      = loader("Window.lua")
-	self.farmTab     = loader("Tabs/FarmTab.lua")
-	self.movementTab = loader("Tabs/Movement.lua")
-	self.espTab      = loader("Tabs/ESPTab.lua")
-	self.bindTab     = loader("Tabs/BindTab.lua")
-	
-	shared.TokenHelper   = loader("Helpers/TokenHelper.lua")
-	local HiveHelper = loader("Helpers/Hive.lua")
-	self.botHelper   = loader("Helpers/AutoFarm.lua")
-	self.TokenData   = loader("TokenData.lua")
+    shared.RayWindow = shared.Rayfield:CreateWindow({
+        Name = "Rayfield Example Window",
+        Icon = 0,
+        LoadingTitle = "Rayfield Interface Suite",
+        LoadingSubtitle = "by Sirius",
+        Theme = "Default",
+        ToggleUIKeybind = "F", 
+    })
+    shared.main = {
+        autoFarm = false,
+        autoDig = false,
+        farmBubble = true,
+        defaultWalkSpeed = 100,
+        defaultJumpPower = 75,
+        currentField = shared.FlowerZones:WaitForChild("Sunflower Field"),
+    }
+    
 
-
-	-- Initialize services and properties
-	self.localPlayer = Players.LocalPlayer
-	self.CoreStats = self.localPlayer:WaitForChild("CoreStats")
-	self.character = self.localPlayer.Character or self.localPlayer.CharacterAdded:Wait()
-	self.humanoid = self.character:WaitForChild("Humanoid")
-	self.rootPart = self.character:WaitForChild("HumanoidRootPart")
-	self.flowerZones = Workspace:WaitForChild("FlowerZones")
-
-	-- Initialize CoreStats
-	self.Pollen = self.CoreStats:WaitForChild("Pollen")
-	self.Honey = self.CoreStats:WaitForChild("Honey")
-	self.Capacity = self.CoreStats:WaitForChild("Capacity")
-	shared.hiveHelper = HiveHelper.new()
-
-	self:init()
-	return self
+    self:initi()
+    return self
 end
 
-function FarmingManager:init()
-	shared.main = {
-		currentField = self.flowerZones:FindFirstChild("Sunflower Field"),
+function FarmingManager:initi()
+    shared.localPlayer = Players.LocalPlayer
+    self.CoreStats = shared.localPlayer:WaitForChild("CoreStats")
+    shared.main.Pollen = self.CoreStats:WaitForChild("Pollen").Value
+	shared.main.Honey = self.CoreStats:WaitForChild("Honey").Value
+	shared.main.Capacity = self.CoreStats:WaitForChild("Capacity").Value
 
-		Pollen = self.Pollen.Value or 0,
-		Capacity = self.Capacity.Value or 0,
-		Honey = self.Honey.Value or 0,
-		tokenList = {},
-		tweenSpeed = 0.6,
-		tokenRadius = 35,
-		defaultWalkSpeed = 60,
-		defaultJumpPower = 70,
+    local characterModule = loadstring(readfile("NewBee/Helpers/Character.lua"))()
+    local hiveModule = loadstring(readfile("NewBee/Helpers/Hive.lua"))()
+    local espModule = loadstring(readfile("NewBee/Helpers/ESP.lua"))()
 
-	}
-	-- tabs
-	self.farmTab = self.farmTab.new(self)
-	self.movementTab = self.movementTab.new(self)
-	-- self.espTab = self.espTab.new(self)
-	self.bindTab = self.bindTab.new(self)
+    local farmTab  = loadstring(readfile("NewBee/Tabs/FarmTab.lua"))()
+    local MovementTab  = loadstring(readfile("NewBee/Tabs/MovementTab.lua"))()
+    local BindTab  = loadstring(readfile("NewBee/Tabs/BindTab.lua"))()
 
-	-- helpers
-	self.botHelper = self.botHelper.new(self)
+    local botHelper = loadstring(readfile("NewBee/Class/Bot.lua"))()
+    -- Initialize module
 
-	for _, prop in ipairs({"Capacity", "Pollen", "Honey"}) do
-		self[prop]:GetPropertyChangedSignal("Value"):Connect(function()
-			shared.main[prop] = self[prop].Value
-		end)
-	end
+    shared.character = characterModule.new()
+    shared.hiveHelper = hiveModule.new()
+    shared.espModule = espModule:Enable()
 
-	self.farmTab.onAutoFarmToggle = (function(value)
-		if value then
-			self.botHelper:start()
-		else
-			self.botHelper:stop()
-		end
-	end)
-	self.farmTab.onFieldChange = function(field)
-		if self.botHelper.autoFarm and not self.botHelper.converting then
-			self.botHelper:stop()
-			self.botHelper:start()
-		end
-	end
+
+    shared.FarmTab = farmTab.new()
+    shared.MovementTab = MovementTab.new()
+    shared.BindTab = BindTab.new()
+    shared.botHelper = botHelper.new()
+
+  local folders = {FieldDecosFolder, DecorationsFolder}
+
+for _, folder in ipairs(folders) do
+    for _, part in ipairs(folder:GetDescendants()) do
+        if part:IsA("BasePart") then
+            part.Transparency = 0.8
+            part.CanCollide = false
+            part.CastShadow = false
+        end
+    end
 end
 
 
+end
 
-FarmingManager.new()
+local manager = FarmingManager.new()
