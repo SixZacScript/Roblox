@@ -3,6 +3,10 @@ local WP = game:GetService("Workspace")
 local Players = game:GetService("Players")
 local FieldDecosFolder = WP:WaitForChild("FieldDecos")
 local DecorationsFolder = WP:WaitForChild("Decorations")
+shared.CollectiblesFolder = WP:WaitForChild("Collectibles")
+local GatesFolder = WP:WaitForChild("Gates")
+local MapFolder = WP:WaitForChild("Map")
+local FencesFolder = MapFolder:WaitForChild("Fences")
 
 -- Globals
 shared.FlowerZones = WP:WaitForChild("FlowerZones")
@@ -34,10 +38,7 @@ function FarmingManager.new()
 
     shared.Rayfield = loadModuleOnce("NewBee/Data/Rayfield.lua")
     shared.RayWindow = shared.Rayfield:CreateWindow({
-        Name = "Rayfield Example Window",
-        Icon = 0,
-        LoadingTitle = "Rayfield Interface Suite",
-        LoadingSubtitle = "by Sirius",
+        Name = "Sippy Hub | SixZac Script",
         Theme = "Default",
         ToggleUIKeybind = "F",
     })
@@ -45,8 +46,9 @@ function FarmingManager.new()
     shared.main = {
         autoFarm = false,
         autoDig = false,
+        autoKillMobs = false,
         farmBubble = true,
-        defaultWalkSpeed = 100,
+        defaultWalkSpeed = 75,
         defaultJumpPower = 75,
         currentField = shared.FlowerZones:WaitForChild("Sunflower Field"),
     }
@@ -72,6 +74,7 @@ function FarmingManager:init()
     local MovementTab = loadModuleOnce("NewBee/Tabs/MovementTab.lua")
     local BindTab = loadModuleOnce("NewBee/Tabs/BindTab.lua")
     local botHelper = loadModuleOnce("NewBee/Class/Bot.lua")
+    local AutoHuntModule = loadModuleOnce("NewBee/Helpers/AutoHunt.lua")
 
     shared.character = characterModule.new()
     shared.Tokens = TokensModule
@@ -82,18 +85,24 @@ function FarmingManager:init()
     shared.MovementTab = MovementTab.new()
     shared.BindTab = BindTab.new()
     shared.botHelper = botHelper.new()
+    shared.AutoHunt = AutoHuntModule.new()
 
     -- Optional: Visual settings for parts
-    local folders = {FieldDecosFolder, DecorationsFolder}
+    local folders = {FieldDecosFolder, DecorationsFolder, GatesFolder, FencesFolder}
     for _, folder in ipairs(folders) do
         for _, part in ipairs(folder:GetDescendants()) do
+            local isStump = (part:IsA("Model") and part.Name == "Stump") or part.Name == "Stump"
             if part:IsA("BasePart") then
+                local color = part.Color
+                if (color.R == 1 and color.G == 0 and color.B == 0) or isStump then continue end
                 part.Transparency = 0.8
                 part.CanCollide = false
                 part.CastShadow = false
             end
         end
     end
+
+
 end
 
 -- Create and initialize the manager

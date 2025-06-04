@@ -108,6 +108,14 @@ function FarmTab.new()
             shared.main.farmBubble = value
         end
     })
+    shared.MainTab:CreateToggle({
+        Name = "Auto Kill mobs",
+        CurrentValue = shared.main.autoKillMobs,
+        Callback = function(value)
+            shared.main.autoKillMobs = value
+            shared.AutoHunt:Toggle()
+        end
+    })
     return self
 end
 

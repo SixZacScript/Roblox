@@ -107,9 +107,7 @@ function MovementManager:moveToAsync(position, isCollectible, item)
         task.wait()
     end
     
-    if item then
-        item:SetAttribute("Collected", true)
-    end
+    if item then item:SetAttribute("Collected", true) end
     self:clearVisual()
 end
 
@@ -254,7 +252,6 @@ function CollectibleManager:getPosition(collectible)
     return collectible:IsA("Model") and collectible:GetPivot().Position or collectible.Position
 end
 
--- Monster Manager - Handles monster detection and combat
 local MonsterManager = {}
 MonsterManager.__index = MonsterManager
 
@@ -324,9 +321,7 @@ function MonsterManager:startCombat(monster)
         local humanoid = shared.character.humanoid
         humanoid.JumpPower = 50
         local lastJump = tick()
-        humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
-        
-        while self.state.autoFarm and self:isAlive(monster) do
+        while self.state.autoFarm and self:isAlive(monster) and not self.state.converting do
             if tick() - lastJump >= Config.MONSTER_JUMP_INTERVAL then
                 humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
                 lastJump = tick()
@@ -346,7 +341,6 @@ function MonsterManager:destroy()
     end
 end
 
--- Main Bot Class - Simplified main controller
 local Bot = {}
 Bot.__index = Bot
 
@@ -487,8 +481,15 @@ function Bot:convertPollen()
             task.wait(1)
             Services.ReplicatedStorage.Events.PlayerHiveCommand:FireServer("ToggleHoneyMaking")
             
+            local startTime = tick()
+            local timeoutDuration = 180 
+            
             while shared.hiveHelper.PollenValue > 0 and self.state.autoFarm and self.state.converting do
                 task.wait(0.2)
+
+                if tick() - startTime >= timeoutDuration then
+                    break
+                end
             end
             
             task.wait(Config.CONVERSION_DELAY)
@@ -540,7 +541,6 @@ function Bot:farmLoop()
         
         if shared.character:isPlayerInField(shared.main.currentField) and not self.state.killingMonster then
             local nearest = self.collectibles:getNearest()
-            print(nearest)
             if nearest then
                 self:collectItem(nearest)
             else

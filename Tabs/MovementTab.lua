@@ -8,7 +8,7 @@ function Movement.new()
 
     self.MovementTab:CreateSlider({
 		Name = "Walk Speed",
-		Range = {16, 100},
+		Range = {16, 80},
 		Increment = 1,
 		Suffix = "Speed",
 		CurrentValue = shared.main.defaultWalkSpeed,
@@ -18,7 +18,7 @@ function Movement.new()
 	})
 	self.MovementTab:CreateSlider({
 		Name = "Jump Power",
-		Range = {50, 150},
+		Range = {50, 100},
 		Increment = 1,
 		Suffix = "Power",
 		CurrentValue = shared.main.defaultJumpPower,

@@ -6,23 +6,24 @@ function TokenHelper:getAllToken()
         ["💎 Diamond Egg"] = {id = 1471850677, isSkill = false, priority = 100},
         ["⭐ Starjelly"] = {id = 2319943273, isSkill = false, priority = 100},
         ["🥇 Gold Egg"] = {id = 1471849394, isSkill = false, priority = 95},
+        ["🌱 Sprout"] = {id = 2529092039, isSkill = false, priority = 90},
 
         -- TIER 2: HIGH VALUE CONSUMABLES (Priority 80-90)
-        ["👑 Royal Jelly"] = {id = 1471882621, isSkill = false, priority = 90},
-        ["📋 Oil"] = {id = 2545746575, isSkill = false, priority = 85},
-        ["✨ Glitter"] = {id = 2542899798, isSkill = false, priority = 85},
-        ["🧪 Glue"] = {id = 2504978518, isSkill = false, priority = 85},
+        ["📋 Oil"] = {id = 2545746575, isSkill = false, priority = 89},
+        ["✨ Glitter"] = {id = 2542899798, isSkill = false, priority = 89},
+        ["🧪 Glue"] = {id = 2504978518, isSkill = false, priority = 89},
+        ["🎲 Dice 3"] = {id = 8055428094, isSkill = false, priority = 89},
         ["🎫 Ticket"] = {id = 1674871631, isSkill = false, priority = 85},
         ["🔷 Blue Extract"] = {id = 2495935302, isSkill = false, priority = 80},
         ["🔴 Red Extract"] = {id = 2495935302, isSkill = false, priority = 80},
-        ["🌱 Sprout"] = {id = 2529092039, isSkill = false, priority = 80},
+        ["👑 Royal Jelly"] = {id = 1471882621, isSkill = false, priority = 80},
 
         -- TIER 3: POWERFUL BOOSTS & SYNCS (Priority 70-75)
         ["🔗 Link Token"] = {id = 1629547638, isSkill = true, priority = 75},
         ["💣+ Buzz Bomb Plus"] = {id = 1442764904, isSkill = true, priority = 70},
         ["🔗 Blue Sync"] = {id = 1874692303, isSkill = true, priority = 70},
         ["🔗 Red Sync"] = {id = 1874704640, isSkill = true, priority = 70},
-        ["🎲 Dice 3"] = {id = 8055428094, isSkill = false, priority = 70},
+   
 
         -- TIER 4: STRONG BOOSTS (Priority 60-65)
         ["🟥 Red Boost"] = {id = 1442859163, isSkill = true, priority = 65},
@@ -59,9 +60,9 @@ function TokenHelper:getAllToken()
         ["🍯 Honey"] = {id = 1472135114, isSkill = false, priority = 20},
 
         -- TIER 9: LOW PRIORITY (Priority 10-15)
-        ["⚡ Speed"] = {id = 65867881, isSkill = true, priority = 15},
         ["😡 Rage"] = {id = 1442700745, isSkill = true, priority = 10},
         ["🍬 Treat"] = {id = 2028574353, isSkill = false, priority = 10},
+        ["⚡ Speed"] = {id = 65867881, isSkill = true, priority = 5},
     }
 end
 
